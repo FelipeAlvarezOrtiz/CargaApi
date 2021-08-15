@@ -1,4 +1,4 @@
-﻿namespace CargaBd.API.Controllers
+﻿namespace CargaBd.API.Models
 {
     public class PayloadDto
     {
