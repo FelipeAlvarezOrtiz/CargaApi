@@ -23,8 +23,8 @@
             public string contact_email { get; set; }
             public string reference { get; set; }
             public string notes { get; set; }
-            public string[] skills_required { get; set; }
-            public string[] skills_optional { get; set; }
+            public int[] skills_required { get; set; }
+            public int[] skills_optional { get; set; }
             public string[] tags { get; set; }
             public string planned_date { get; set; }
             public string programmed_date { get; set; }
