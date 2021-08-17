@@ -929,6 +929,7 @@ namespace CargaBd.API.Controllers
                         }
                     }
                 };
+                var idActual = 0;
                 try
                 {
                     connection.Open();
@@ -943,11 +944,63 @@ namespace CargaBd.API.Controllers
                     {
                         var dtoRespuesta = new PayloadDto();
                         var idPayload = int.Parse(row["ID"].ToString());
-                        
+                        idActual = int.Parse(row["ID"].ToString());
+                        if (idActual == 70475274)
+                        {
+                            Console.WriteLine("Error");
+                        }
+                        //var id = int.Parse(row["ID"].ToString() ?? string.Empty);
+                        //int? order = int.TryParse(row["ORDER"].ToString(), out var orderParsed) ? orderParsed : null;
+                        var tracking_id = row["TRACKING_ID"].ToString();
+                        var status = row["STATUS"].ToString();
+                        var title = row["TITLE"].ToString();
+                        var address = row["ADDRESS"].ToString();
+                        var checkin_time = row["CHECKIN_TIME"].ToString();
+                        var checkout_comment = row["CHECKOUT_COMMENT"].ToString();
+                        var checkout_latitude = row["CHECKOUT_LATITUDE"].ToString();
+                        var checkout_longitude = row["CHECKOUT_LONGITUDE"].ToString();
+                        var checkout_observation = row["CHECKOUT_OBSERVATION"].ToString();
+                        var checkout_time = row["CHECKOUT_TIME"].ToString();
+                        var contact_email = row["CONTACT_EMAIL"].ToString();
+                        var contact_name = row["CONTACT_NAME"].ToString();
+                        var contact_phone = row["CONTACT_PHONE"].ToString();
+                        var created = row["CREATED"].ToString();
+                        var current_eta = row["CURRENT_ETA"].ToString();
+                        var duration = row["DURATION"].ToString();
+                        var estimated_time_arrival = row["ESTIMATED_TIME_ARRIVAL"].ToString();
+                        var estimated_time_departure = row["ESTIMATED_TIME_DEPARTURE"].ToString();
+                        var eta_current = row["ETA_CURRENT"].ToString();
+                        var eta_predicted = row["ETA_PREDICTED"].ToString();
+                        var extra_field_values = row["EXTRA_FIELD_VALUES"].ToString();
+                        var fleet = row["FLEET"].ToString();
+                        var geocode_alert = row["GEOCODE_ALERT"].ToString();
+                        var has_alert = row["HAS_ALERT"].ToString().Equals("true");
+                        var latitude = row["LATITUDE"].ToString();
+                        var longitude = row["LONGITUDE"].ToString();
+                        var modified = row["MODIFIED"].ToString();
+                        var notes = row["NOTES"].ToString();
+                        var planned_date = row["PLANNED_DATE"].ToString();
+                        var priority = row["PRIORITY"].ToString().Equals("true");
+                        var programmed_date = row["PROGRAMMED_DATE"].ToString();
+                        var window_start_2 = row["WINDOW_START_2"].ToString();
+                        var window_end = row["WINDOW_END"].ToString();
+                        var window_start = row["WINDOW_START"].ToString();
+                        var window_end_2 = row["WINDOW_END_2"].ToString();
+                        var visit_type = row["VISIT_TYPE"].ToString();
+                        var signature = row["SIGNATURE"].ToString();
+                        var route_estimated_time_start = row["ROUTE_ESTIMATED_TIME_START"].ToString();
+                        var route = row["ROUTE"].ToString();
+                        var reference = row["REFERENCE"].ToString();
+                        var vehicle = int.Parse(row["VEHICLE"].ToString());
+                        //var driver = int.Parse(row["DRIVER"].ToString() ?? string.Empty);
+                        //var priority_level = int.Parse(row["PRIORITY_LEVEL"].ToString() ?? string.Empty);
+                        var load = decimal.Parse(row["LOAD"].ToString());
+                        var load_2 = decimal.Parse(row["LOAD_2"].ToString());
+                        var load_3 = decimal.Parse(row["LOAD_3"].ToString());
                         dtoRespuesta = new PayloadDto
                         {
-                            id = int.Parse(row["ID"].ToString() ?? string.Empty),
-                            order = int.Parse(row["ORDER"].ToString() ?? string.Empty),
+                            id = int.Parse(row["ID"].ToString() ?? null),
+                            order = int.TryParse(row["ORDER"].ToString(), out var orderParsed) ? orderParsed : null,
                             tracking_id = row["TRACKING_ID"].ToString(),
                             status = row["STATUS"].ToString(),
                             title = row["TITLE"].ToString(),
@@ -989,8 +1042,8 @@ namespace CargaBd.API.Controllers
                             route = row["ROUTE"].ToString(),
                             reference = row["REFERENCE"].ToString(),
                             vehicle = int.Parse(row["VEHICLE"].ToString()),
-                            driver = int.Parse(row["DRIVER"].ToString() ?? string.Empty),
-                            priority_level = int.Parse(row["PRIORITY_LEVEL"].ToString() ?? string.Empty),
+                            driver = int.TryParse(row["DRIVER"].ToString(), out var driverParsed) ? driverParsed : null,
+                            priority_level = int.TryParse(row["PRIORITY_LEVEL"].ToString(), out var plParsed) ? plParsed : null,
                             load = decimal.Parse(row["LOAD"].ToString()),
                             load_2 = decimal.Parse(row["LOAD_2"].ToString()),
                             load_3 = decimal.Parse(row["LOAD_3"].ToString()),
@@ -1110,6 +1163,7 @@ namespace CargaBd.API.Controllers
                 }
                 catch (Exception ex)
                 {
+                    Console.WriteLine(idActual);
                     return Problem(ex.Message);
                 }
                 finally
