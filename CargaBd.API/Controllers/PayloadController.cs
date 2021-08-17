@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Linq.Expressions;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -27,6 +26,11 @@ namespace CargaBd.API.Controllers
             _config = config;
         }
 
+        /// <summary>
+        /// Inicia una carga desde una fecha de inicio hasta el dia de hoy, enviar la fecha actual para hacer una carga diaria
+        /// </summary>
+        /// <param name="FechaFin">Fecha en formato dd-MM-yyyy</param>
+        /// <returns></returns>
         [HttpGet("Pipeline/{FechaFin}")]
         public async Task<IActionResult> CargarPipeline(string FechaFin)
         {
@@ -679,6 +683,7 @@ namespace CargaBd.API.Controllers
                 catch(Exception errorException)
                 {
                     Console.WriteLine("Ha ocurrido un error con "+errorException.Message);
+                    TimeFixed = TimeFixed.AddDays(1);
                 }
             }
 
@@ -1327,5 +1332,245 @@ namespace CargaBd.API.Controllers
                 }
             }
         }
+
+        [HttpGet("{fechaDesde}&{fechaHasta}&{referencia}")]
+        public async Task<IActionResult> ObtenerPayloadPorFechaReferencia(string fechaDesde, string fechaHasta,string referencia)
+        {
+            if (string.IsNullOrEmpty(fechaDesde) && string.IsNullOrEmpty(fechaHasta) &&
+                string.IsNullOrEmpty(referencia))
+                return BadRequest("Los parametros no pueden ir en vacio.");
+            var TimeFixedDesdeDb = string.Empty;
+            var TimeFixedHastaDb = string.Empty;
+            if (!fechaDesde.Contains('-') && !fechaHasta.Contains('-'))
+            {
+                if (!DateTime.TryParse(fechaDesde, out var TimeFixedDesde) ||
+                    !DateTime.TryParse(fechaHasta, out var TimeFixedHasta))
+                    return BadRequest("El formato de la fecha no es compatible");
+                if (DateTime.Compare(TimeFixedHasta, TimeFixedDesde) < 0)
+                    return BadRequest("Los rangos de fecha están cambiados. Limite 'hasta' es menor a la fecha 'desde'");
+                TimeFixedDesdeDb = TimeFixedDesde.ToString("yyyy-MM-dd");
+                TimeFixedHastaDb = TimeFixedHasta.ToString("yyyy-MM-dd");
+            }
+            
+            await using (var connection = new SqlConnection(_config.GetConnectionString("conexion")))
+            {
+                var commandObtenerData = new SqlCommand("ObtenerPayloadEntreFechasYReferencia")
+                {
+                    CommandType = CommandType.StoredProcedure,
+                    Connection = connection,
+                    Parameters =
+                    {
+                        new SqlParameter{
+                            ParameterName = "@fechaDesde",
+                            SqlDbType = SqlDbType.NVarChar,
+                            Direction = ParameterDirection.Input,
+                            Value = TimeFixedDesdeDb
+                        },new SqlParameter{
+                            ParameterName = "@fechaHasta",
+                            SqlDbType = SqlDbType.NVarChar,
+                            Direction = ParameterDirection.Input,
+                            Value = TimeFixedHastaDb
+                        },new SqlParameter{
+                            ParameterName = "@referencia",
+                            SqlDbType = SqlDbType.NVarChar,
+                            Direction = ParameterDirection.Input,
+                            Value = TimeFixedHastaDb
+                        }
+                    }
+                };
+                try
+                {
+                    connection.Open();
+                    var tablaResult = new DataTable();
+                    commandObtenerData.CommandTimeout = 120000;
+                    var dataAdapter = new SqlDataAdapter(commandObtenerData);
+                    dataAdapter.Fill(tablaResult);
+                    if (tablaResult.Rows.Count <= 0)
+                        return NotFound("No se han encontrado datos en relación a los parametros de búsqueda.");
+                    var listaPayloads = new List<PayloadDto>();
+                    foreach (DataRow row in tablaResult.Rows)
+                    {
+                        var dtoRespuesta = new PayloadDto();
+                        var idPayload = int.Parse(row["ID"].ToString());
+
+                        dtoRespuesta = new PayloadDto
+                        {
+                            id = int.Parse(row["ID"].ToString() ?? string.Empty),
+                            order = int.Parse(row["ORDER"].ToString() ?? string.Empty),
+                            tracking_id = row["TRACKING_ID"].ToString(),
+                            status = row["STATUS"].ToString(),
+                            title = row["TITLE"].ToString(),
+                            address = row["ADDRESS"].ToString(),
+                            checkin_time = row["CHECKIN_TIME"].ToString(),
+                            checkout_comment = row["CHECKOUT_COMMENT"].ToString(),
+                            checkout_latitude = row["CHECKOUT_LATITUDE"].ToString(),
+                            checkout_longitude = row["CHECKOUT_LONGITUDE"].ToString(),
+                            checkout_observation = row["CHECKOUT_OBSERVATION"].ToString(),
+                            checkout_time = row["CHECKOUT_TIME"].ToString(),
+                            contact_email = row["CONTACT_EMAIL"].ToString(),
+                            contact_name = row["CONTACT_NAME"].ToString(),
+                            contact_phone = row["CONTACT_PHONE"].ToString(),
+                            created = row["CREATED"].ToString(),
+                            current_eta = row["CURRENT_ETA"].ToString(),
+                            duration = row["DURATION"].ToString(),
+                            estimated_time_arrival = row["ESTIMATED_TIME_ARRIVAL"].ToString(),
+                            estimated_time_departure = row["ESTIMATED_TIME_DEPARTURE"].ToString(),
+                            eta_current = row["ETA_CURRENT"].ToString(),
+                            eta_predicted = row["ETA_PREDICTED"].ToString(),
+                            extra_field_values = row["EXTRA_FIELD_VALUES"].ToString(),
+                            fleet = row["FLEET"].ToString(),
+                            geocode_alert = row["GEOCODE_ALERT"].ToString(),
+                            has_alert = row["HAS_ALERT"].ToString().Equals("true"),
+                            latitude = row["LATITUDE"].ToString(),
+                            longitude = row["LONGITUDE"].ToString(),
+                            modified = row["MODIFIED"].ToString(),
+                            notes = row["NOTES"].ToString(),
+                            planned_date = row["PLANNED_DATE"].ToString(),
+                            priority = row["PRIORITY"].ToString().Equals("true"),
+                            programmed_date = row["PROGRAMMED_DATE"].ToString(),
+                            window_start_2 = row["WINDOW_START_2"].ToString(),
+                            window_end = row["WINDOW_END"].ToString(),
+                            window_start = row["WINDOW_START"].ToString(),
+                            window_end_2 = row["WINDOW_END_2"].ToString(),
+                            visit_type = row["VISIT_TYPE"].ToString(),
+                            signature = row["SIGNATURE"].ToString(),
+                            route_estimated_time_start = row["ROUTE_ESTIMATED_TIME_START"].ToString(),
+                            route = row["ROUTE"].ToString(),
+                            reference = row["REFERENCE"].ToString(),
+                            vehicle = int.Parse(row["VEHICLE"].ToString()),
+                            driver = int.Parse(row["DRIVER"].ToString() ?? string.Empty),
+                            priority_level = int.Parse(row["PRIORITY_LEVEL"].ToString() ?? string.Empty),
+                            load = decimal.Parse(row["LOAD"].ToString()),
+                            load_2 = decimal.Parse(row["LOAD_2"].ToString()),
+                            load_3 = decimal.Parse(row["LOAD_3"].ToString()),
+                        };
+
+                        #region Cargar TAGS
+                        var commandObtenerTags = new SqlCommand("ObtenerTagsSegunId")
+                        {
+                            CommandType = CommandType.StoredProcedure,
+                            Connection = connection,
+                            Parameters =
+                            {
+                                new SqlParameter{
+                                    ParameterName = "@id",
+                                    SqlDbType = SqlDbType.Int,
+                                    Direction = ParameterDirection.Input,
+                                    Value = idPayload
+                                }
+                            }
+                        };
+                        var dataAdapterTags = new SqlDataAdapter(commandObtenerTags);
+                        var tablaTags = new DataTable();
+                        dataAdapterTags.Fill(tablaTags);
+                        dtoRespuesta.tags = new string[tablaTags.Rows.Count];
+                        var iteradorTags = 0;
+                        foreach (DataRow tags in tablaTags.Rows)
+                        {
+                            dtoRespuesta.tags[iteradorTags] = tags["NAMETAG"].ToString();
+                            iteradorTags++;
+                        }
+                        #endregion
+
+                        #region Cargar Pictures
+                        var commandObtenerPictures = new SqlCommand("ObtenerPicturesSegunId")
+                        {
+                            CommandType = CommandType.StoredProcedure,
+                            Connection = connection,
+                            Parameters =
+                            {
+                                new SqlParameter{
+                                    ParameterName = "@id",
+                                    SqlDbType = SqlDbType.Int,
+                                    Direction = ParameterDirection.Input,
+                                    Value = idPayload
+                                }
+                            }
+                        };
+                        var dataAdapterPictures = new SqlDataAdapter(commandObtenerPictures);
+                        var tablaPictures = new DataTable();
+                        dataAdapterPictures.Fill(tablaPictures);
+                        dtoRespuesta.pictures = new string[tablaPictures.Rows.Count];
+                        var iteradorPictures = 0;
+                        foreach (DataRow pictures in tablaPictures.Rows)
+                        {
+                            dtoRespuesta.pictures[iteradorPictures] = pictures["URLPICTURE"].ToString();
+                            iteradorPictures++;
+                        }
+                        #endregion
+
+                        #region Cargar SkillsRequired
+                        var commandObtenerSR = new SqlCommand("ObtenerSkillsRequiredSegunId")
+                        {
+                            CommandType = CommandType.StoredProcedure,
+                            Connection = connection,
+                            Parameters =
+                            {
+                                new SqlParameter{
+                                    ParameterName = "@id",
+                                    SqlDbType = SqlDbType.Int,
+                                    Direction = ParameterDirection.Input,
+                                    Value = idPayload
+                                }
+                            }
+                        };
+                        var dataAdapterSR = new SqlDataAdapter(commandObtenerSR);
+                        var tablaSR = new DataTable();
+                        dataAdapterSR.Fill(tablaSR);
+                        dtoRespuesta.skills_required = new int[tablaSR.Rows.Count];
+                        var iteradorSR = 0;
+                        foreach (DataRow skillsRequired in tablaSR.Rows)
+                        {
+                            dtoRespuesta.skills_required[iteradorSR] = int.Parse(skillsRequired["NAMESR"].ToString());
+                            iteradorSR++;
+                        }
+                        #endregion
+
+                        #region Cargar SkillsOptionals
+                        var commandObtenerSO = new SqlCommand("ObtenerSkillsOptionalsSegunId")
+                        {
+                            CommandType = CommandType.StoredProcedure,
+                            Connection = connection,
+                            Parameters =
+                            {
+                                new SqlParameter{
+                                    ParameterName = "@id",
+                                    SqlDbType = SqlDbType.Int,
+                                    Direction = ParameterDirection.Input,
+                                    Value = idPayload
+                                }
+                            }
+                        };
+                        var dataAdapterSO = new SqlDataAdapter(commandObtenerSO);
+                        var tablaSO = new DataTable();
+                        dataAdapterSO.Fill(tablaSO);
+                        dtoRespuesta.skills_optional = new int[tablaSR.Rows.Count];
+                        var iteradorSO = 0;
+                        foreach (DataRow skillsOptional in tablaSO.Rows)
+                        {
+                            dtoRespuesta.skills_optional[iteradorSO] = int.Parse(skillsOptional["NAMESO"].ToString());
+                            iteradorSO++;
+                        }
+                        #endregion
+
+                        listaPayloads.Add(dtoRespuesta);
+                    }
+                    return (listaPayloads.Count > 0) ? Ok(listaPayloads) : NotFound("No existe data para los filtros ingresados");
+                }
+                catch (Exception ex)
+                {
+                    return Problem(ex.Message);
+                }
+                finally
+                {
+                    if (connection.State == ConnectionState.Open)
+                    {
+                        connection.Close();
+                    }
+                }
+            }
+
+        }
+
     }
 }

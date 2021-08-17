@@ -49,7 +49,7 @@
             public bool priority { get; set; }
             public bool has_alert { get; set; }
             public int? priority_level { get; set; }
-            public string extra_field_values { get; set; }
+            public object extra_field_values { get; set; }
             public string geocode_alert { get; set; }
             public string visit_type { get; set; }
             public string current_eta { get; set; }
