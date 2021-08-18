@@ -31,7 +31,7 @@ namespace CargaBd.API.Controllers
         /// </summary>
         /// <param name="FechaFin">Fecha en formato dd-MM-yyyy</param>
         /// <returns></returns>
-        [HttpGet("Pipeline/{FechaFin}")]
+        [HttpPost("CargaPipeline")]
         public async Task<IActionResult> CargarPipeline(string FechaFin)
         {
             if (!DateTime.TryParse(FechaFin, out var TimeFixed))
@@ -691,7 +691,7 @@ namespace CargaBd.API.Controllers
             return errores == 0 ? Ok() : Ok("Se ha completado exitosamente, pero han ocurrido errores. Verificar log");
         }
 
-        [HttpGet("NumeroOrden/{numeroOrden}")]
+        [HttpPost("NumeroOrden")]
         public async Task<IActionResult> ObtenerPayloadPorNumeroDeOrden(string numeroOrden)
         {
             if (string.IsNullOrEmpty(numeroOrden)) return BadRequest();
@@ -895,11 +895,10 @@ namespace CargaBd.API.Controllers
                     }
                 }
             }
-            return NotFound("No se han encontrado datos en relación a los parametros de búsqueda.");
         }
 
-        [HttpGet("{fechaDesde}&{fechaHasta}")]
-        public async Task<IActionResult> ObtenerPayloadPorFecha(string fechaDesde,string fechaHasta)
+        [HttpPost("BusquedaMasiva")]
+        public async Task<IActionResult> ObtenerPayloadPorFecha(string fechaDesde,string fechaHasta,string usuario)
         {
             if (string.IsNullOrEmpty(fechaDesde) || string.IsNullOrEmpty(fechaHasta)) return BadRequest("Los parametros no puede ir vacios.");
             if (!DateTime.TryParse(fechaDesde, out var TimeFixedDesde) || !DateTime.TryParse(fechaHasta, out var TimeFixedHasta))
@@ -1176,8 +1175,8 @@ namespace CargaBd.API.Controllers
             }
         }
 
-        [HttpGet("Referencia/{referencia}")]
-        public async Task<IActionResult> ObtenerPayloadPorReference(string referencia)
+        [HttpPost("Referencia")]
+        public async Task<IActionResult> ObtenerPayloadPorReference(string referencia,string usuario)
         {
             if (string.IsNullOrEmpty(referencia)) return BadRequest("La referencia no puede ser nula");
             await using var connection = new SqlConnection(_config.GetConnectionString("conexion"));
@@ -1387,8 +1386,8 @@ namespace CargaBd.API.Controllers
             }
         }
 
-        [HttpGet("{fechaDesde}&{fechaHasta}&{referencia}")]
-        public async Task<IActionResult> ObtenerPayloadPorFechaReferencia(string fechaDesde, string fechaHasta,string referencia)
+        [HttpPost("Masivo")]
+        public async Task<IActionResult> ObtenerPayloadPorFechaReferencia(string fechaDesde, string fechaHasta,string referencia,string usuario)
         {
             if (string.IsNullOrEmpty(fechaDesde) && string.IsNullOrEmpty(fechaHasta) &&
                 string.IsNullOrEmpty(referencia))
