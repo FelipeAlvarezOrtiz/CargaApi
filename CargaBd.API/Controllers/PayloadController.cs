@@ -753,7 +753,7 @@ namespace CargaBd.API.Controllers
                 };
                 try
                 {
-                    connection.Open();
+                    //connection.Open();
                     var tablaResult = new DataTable();
                     commandObtenerData.CommandTimeout = 120000;
                     var dataAdapter = new SqlDataAdapter(commandObtenerData);
@@ -1010,7 +1010,7 @@ namespace CargaBd.API.Controllers
                 var idActual = 0;
                 try
                 {
-                    connection.Open();
+                    //connection.Open();
                     var tablaResult = new DataTable();
                     commandObtenerData.CommandTimeout = 120000;
                     var dataAdapter = new SqlDataAdapter(commandObtenerData);
@@ -1313,7 +1313,7 @@ namespace CargaBd.API.Controllers
             };
             try
             {
-                connection.Open();
+                //connection.Open();
                 var tablaResult = new DataTable();
                 commandObtenerData.CommandTimeout = 120000;
                 var dataAdapter = new SqlDataAdapter(commandObtenerData);
@@ -1588,7 +1588,7 @@ namespace CargaBd.API.Controllers
                 };
                 try
                 {
-                    connection.Open();
+                    //connection.Open();
                     var tablaResult = new DataTable();
                     commandObtenerData.CommandTimeout = 120000;
                     var dataAdapter = new SqlDataAdapter(commandObtenerData);
