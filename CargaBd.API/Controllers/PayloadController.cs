@@ -692,11 +692,46 @@ namespace CargaBd.API.Controllers
         }
 
         [HttpPost("NumeroOrden")]
-        public async Task<IActionResult> ObtenerPayloadPorNumeroDeOrden(string numeroOrden)
+        public async Task<IActionResult> ObtenerPayloadPorNumeroDeOrden(string numeroOrden,string usuario)
         {
-            if (string.IsNullOrEmpty(numeroOrden)) return BadRequest();
+            if (string.IsNullOrEmpty(numeroOrden)) return BadRequest("El numero de orden no puede ir vácio.");
+            if (string.IsNullOrEmpty(usuario)) return BadRequest("El usuario no puede ir vacio.");
+
             await using (var connection = new SqlConnection(_config.GetConnectionString("conexion")))
             {
+                var nameUser = string.Empty;
+                //OBTENER USUARIO
+                var commandObtenerUsuario = new SqlCommand("ObtenerUsuario")
+                {
+                    CommandType = CommandType.StoredProcedure,
+                    Connection = connection,
+                    Parameters =
+                    {
+                        new SqlParameter{
+                            ParameterName = "@hash",
+                            SqlDbType = SqlDbType.NVarChar,
+                            Direction = ParameterDirection.Input,
+                            Value = usuario
+                        }
+                    }
+                };
+                try
+                {
+                    connection.Open();
+                    var tablaResultUsuario = new DataTable();
+                    commandObtenerUsuario.CommandTimeout = 120000;
+                    var dataAdapterUser = new SqlDataAdapter(commandObtenerUsuario);
+                    dataAdapterUser.Fill(tablaResultUsuario);
+                    if (tablaResultUsuario.Rows.Count <= 0)
+                        return NotFound("El usuario no existe o no se encuentra activo.");
+                    nameUser = tablaResultUsuario.Rows[0]["NOMBRE_USUARIO"].ToString();
+                }
+                catch (Exception exception)
+                {
+                    Console.WriteLine($"Ha ocurrido un error al ejecutar el procedure del usuario con mensaje {exception.Message}");
+                    return BadRequest("Ha ocurrido un error interno");
+                }
+
                 var commandObtenerData = new SqlCommand("ObtenerPayloadSegunTrack")
                 {
                     CommandType = CommandType.StoredProcedure,
@@ -708,6 +743,11 @@ namespace CargaBd.API.Controllers
                             SqlDbType = SqlDbType.NVarChar,
                             Direction = ParameterDirection.Input,
                             Value = numeroOrden
+                        },new SqlParameter{
+                            ParameterName = "@usuario",
+                            SqlDbType = SqlDbType.NVarChar,
+                            Direction = ParameterDirection.Input,
+                            Value = nameUser
                         }
                     }
                 };
@@ -900,6 +940,7 @@ namespace CargaBd.API.Controllers
         [HttpPost("BusquedaMasiva")]
         public async Task<IActionResult> ObtenerPayloadPorFecha(string fechaDesde,string fechaHasta,string usuario)
         {
+            if (string.IsNullOrEmpty(usuario)) return BadRequest("El usuario no puede ir vacio.");
             if (string.IsNullOrEmpty(fechaDesde) || string.IsNullOrEmpty(fechaHasta)) return BadRequest("Los parametros no puede ir vacios.");
             if (!DateTime.TryParse(fechaDesde, out var TimeFixedDesde) || !DateTime.TryParse(fechaHasta, out var TimeFixedHasta))
                 return BadRequest("El formato de la fecha no es compatible");
@@ -909,6 +950,39 @@ namespace CargaBd.API.Controllers
             var TimeFixedHastaDb = TimeFixedHasta.ToString("yyyy-MM-dd");
             await using (var connection = new SqlConnection(_config.GetConnectionString("conexion")))
             {
+                var nameUser = string.Empty;
+                //OBTENER USUARIO
+                var commandObtenerUsuario = new SqlCommand("ObtenerUsuario")
+                {
+                    CommandType = CommandType.StoredProcedure,
+                    Connection = connection,
+                    Parameters =
+                    {
+                        new SqlParameter{
+                            ParameterName = "@hash",
+                            SqlDbType = SqlDbType.NVarChar,
+                            Direction = ParameterDirection.Input,
+                            Value = usuario
+                        }
+                    }
+                };
+                try
+                {
+                    connection.Open();
+                    var tablaResultUsuario = new DataTable();
+                    commandObtenerUsuario.CommandTimeout = 120000;
+                    var dataAdapterUser = new SqlDataAdapter(commandObtenerUsuario);
+                    dataAdapterUser.Fill(tablaResultUsuario);
+                    if (tablaResultUsuario.Rows.Count <= 0)
+                        return NotFound("El usuario no existe o no se encuentra activo.");
+                    nameUser = tablaResultUsuario.Rows[0]["NOMBRE_USUARIO"].ToString();
+                }
+                catch (Exception exception)
+                {
+                    Console.WriteLine($"Ha ocurrido un error al ejecutar el procedure del usuario con mensaje {exception.Message}");
+                    return BadRequest("Ha ocurrido un error interno");
+                }
+
                 var commandObtenerData = new SqlCommand("ObtenerPayloadEntreFechas")
                 {
                     CommandType = CommandType.StoredProcedure,
@@ -925,6 +999,11 @@ namespace CargaBd.API.Controllers
                             SqlDbType = SqlDbType.NVarChar,
                             Direction = ParameterDirection.Input,
                             Value = TimeFixedHastaDb
+                        },new SqlParameter{
+                            ParameterName = "@usuario",
+                            SqlDbType = SqlDbType.NVarChar,
+                            Direction = ParameterDirection.Input,
+                            Value = nameUser
                         }
                     }
                 };
@@ -1178,8 +1257,41 @@ namespace CargaBd.API.Controllers
         [HttpPost("Referencia")]
         public async Task<IActionResult> ObtenerPayloadPorReference(string referencia,string usuario)
         {
+            if (string.IsNullOrEmpty(usuario)) return BadRequest("El usuario no puede ir vacio.");
             if (string.IsNullOrEmpty(referencia)) return BadRequest("La referencia no puede ser nula");
             await using var connection = new SqlConnection(_config.GetConnectionString("conexion"));
+            var nameUser = string.Empty;
+            //OBTENER USUARIO
+            var commandObtenerUsuario = new SqlCommand("ObtenerUsuario")
+            {
+                CommandType = CommandType.StoredProcedure,
+                Connection = connection,
+                Parameters =
+                {
+                    new SqlParameter{
+                        ParameterName = "@hash",
+                        SqlDbType = SqlDbType.NVarChar,
+                        Direction = ParameterDirection.Input,
+                        Value = usuario
+                    }
+                }
+            };
+            try
+            {
+                connection.Open();
+                var tablaResultUsuario = new DataTable();
+                commandObtenerUsuario.CommandTimeout = 120000;
+                var dataAdapterUser = new SqlDataAdapter(commandObtenerUsuario);
+                dataAdapterUser.Fill(tablaResultUsuario);
+                if (tablaResultUsuario.Rows.Count <= 0)
+                    return NotFound("El usuario no existe o no se encuentra activo.");
+                nameUser = tablaResultUsuario.Rows[0]["NOMBRE_USUARIO"].ToString();
+            }
+            catch (Exception exception)
+            {
+                Console.WriteLine($"Ha ocurrido un error al ejecutar el procedure del usuario con mensaje {exception.Message}");
+                return BadRequest("Ha ocurrido un error interno");
+            }
             var commandObtenerData = new SqlCommand("ObtenerPayloadPorReferencia")
             {
                 CommandType = CommandType.StoredProcedure,
@@ -1191,6 +1303,11 @@ namespace CargaBd.API.Controllers
                         SqlDbType = SqlDbType.NVarChar,
                         Direction = ParameterDirection.Input,
                         Value = referencia
+                    }, new SqlParameter{
+                        ParameterName = "@usuario",
+                        SqlDbType = SqlDbType.NVarChar,
+                        Direction = ParameterDirection.Input,
+                        Value = nameUser
                     }
                 }
             };
@@ -1389,6 +1506,7 @@ namespace CargaBd.API.Controllers
         [HttpPost("Masivo")]
         public async Task<IActionResult> ObtenerPayloadPorFechaReferencia(string fechaDesde, string fechaHasta,string referencia,string usuario)
         {
+            if (string.IsNullOrEmpty(usuario)) return BadRequest("El usuario no puede ir vacio.");
             if (string.IsNullOrEmpty(fechaDesde) && string.IsNullOrEmpty(fechaHasta) &&
                 string.IsNullOrEmpty(referencia))
                 return BadRequest("Los parametros no pueden ir en vacio.");
@@ -1407,6 +1525,38 @@ namespace CargaBd.API.Controllers
             
             await using (var connection = new SqlConnection(_config.GetConnectionString("conexion")))
             {
+                var nameUser = string.Empty;
+                //OBTENER USUARIO
+                var commandObtenerUsuario = new SqlCommand("ObtenerUsuario")
+                {
+                    CommandType = CommandType.StoredProcedure,
+                    Connection = connection,
+                    Parameters =
+                    {
+                        new SqlParameter{
+                            ParameterName = "@hash",
+                            SqlDbType = SqlDbType.NVarChar,
+                            Direction = ParameterDirection.Input,
+                            Value = usuario
+                        }
+                    }
+                };
+                try
+                {
+                    connection.Open();
+                    var tablaResultUsuario = new DataTable();
+                    commandObtenerUsuario.CommandTimeout = 120000;
+                    var dataAdapterUser = new SqlDataAdapter(commandObtenerUsuario);
+                    dataAdapterUser.Fill(tablaResultUsuario);
+                    if (tablaResultUsuario.Rows.Count <= 0)
+                        return NotFound("El usuario no existe o no se encuentra activo.");
+                    nameUser = tablaResultUsuario.Rows[0]["NOMBRE_USUARIO"].ToString();
+                }
+                catch (Exception exception)
+                {
+                    Console.WriteLine($"Ha ocurrido un error al ejecutar el procedure del usuario con mensaje {exception.Message}");
+                    return BadRequest("Ha ocurrido un error interno");
+                }
                 var commandObtenerData = new SqlCommand("ObtenerPayloadEntreFechasYReferencia")
                 {
                     CommandType = CommandType.StoredProcedure,
@@ -1428,6 +1578,11 @@ namespace CargaBd.API.Controllers
                             SqlDbType = SqlDbType.NVarChar,
                             Direction = ParameterDirection.Input,
                             Value = TimeFixedHastaDb
+                        },new SqlParameter{
+                            ParameterName = "@usuario",
+                            SqlDbType = SqlDbType.NVarChar,
+                            Direction = ParameterDirection.Input,
+                            Value = nameUser
                         }
                     }
                 };
