@@ -38,6 +38,8 @@ namespace CargaBd.API.Controllers
                 return BadRequest("El formato de la fecha no es compatible");
             if (DateTime.Compare(TimeFixed, DateTime.Today) > 0)
                 return BadRequest("No se puede consultar al futuro ... todavía");
+            if(DateTime.Compare(TimeFixed,DateTime.Today) == 0)
+                TimeFixed = DateTime.Today.AddDays(-1);
             var httpClient = new HttpClient();
             httpClient.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Token", _config.GetValue<string>("Token"));
