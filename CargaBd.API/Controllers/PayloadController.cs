@@ -45,7 +45,7 @@ namespace CargaBd.API.Controllers
                 new AuthenticationHeaderValue("Token", _config.GetValue<string>("Token"));
             //aqui va el While fecha sea menor a hoy
             var errores = 0;
-            while (DateTime.Compare(TimeFixed, DateTime.Today) <= 0)
+            while (DateTime.Compare(TimeFixed, DateTime.Today) < 0)
             {
                 try
                 {
