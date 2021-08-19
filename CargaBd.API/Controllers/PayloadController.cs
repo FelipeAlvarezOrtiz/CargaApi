@@ -32,9 +32,9 @@ namespace CargaBd.API.Controllers
         /// <param name="FechaFin">Fecha en formato dd-MM-yyyy</param>
         /// <returns></returns>
         [HttpPost("CargaPipeline")]
-        public async Task<IActionResult> CargarPipeline(string FechaFin)
+        public async Task<IActionResult> CargarPipeline([FromBody]FechaDto Fecha)
         {
-            if (!DateTime.TryParse(FechaFin, out var TimeFixed))
+            if (!DateTime.TryParse(Fecha.FechaFin, out var TimeFixed))
                 return BadRequest("El formato de la fecha no es compatible");
             if (DateTime.Compare(TimeFixed, DateTime.Today) > 0)
                 return BadRequest("No se puede consultar al futuro ... todavía");
@@ -692,10 +692,10 @@ namespace CargaBd.API.Controllers
         }
 
         [HttpPost("NumeroOrden")]
-        public async Task<IActionResult> ObtenerPayloadPorNumeroDeOrden(string numeroOrden,string usuario)
+        public async Task<IActionResult> ObtenerPayloadPorNumeroDeOrden([FromBody]NumeroOrdenDto request)
         {
-            if (string.IsNullOrEmpty(numeroOrden)) return BadRequest("El numero de orden no puede ir vácio.");
-            if (string.IsNullOrEmpty(usuario)) return BadRequest("El usuario no puede ir vacio.");
+            if (string.IsNullOrEmpty(request.NumeroOrden.ToString())) return BadRequest("El numero de orden no puede ir vácio.");
+            if (string.IsNullOrEmpty(request.Usuario)) return BadRequest("El usuario no puede ir vacio.");
 
             await using (var connection = new SqlConnection(_config.GetConnectionString("conexion")))
             {
@@ -711,7 +711,7 @@ namespace CargaBd.API.Controllers
                             ParameterName = "@hash",
                             SqlDbType = SqlDbType.NVarChar,
                             Direction = ParameterDirection.Input,
-                            Value = usuario
+                            Value = request.Usuario
                         }
                     }
                 };
@@ -742,7 +742,7 @@ namespace CargaBd.API.Controllers
                             ParameterName = "@trackId",
                             SqlDbType = SqlDbType.NVarChar,
                             Direction = ParameterDirection.Input,
-                            Value = numeroOrden
+                            Value = request.NumeroOrden.ToString()
                         },new SqlParameter{
                             ParameterName = "@usuario",
                             SqlDbType = SqlDbType.NVarChar,
@@ -938,11 +938,11 @@ namespace CargaBd.API.Controllers
         }
 
         [HttpPost("BusquedaMasiva")]
-        public async Task<IActionResult> ObtenerPayloadPorFecha(string fechaDesde,string fechaHasta,string usuario)
+        public async Task<IActionResult> ObtenerPayloadPorFecha([FromBody]BusquedaMasivaDto request)
         {
-            if (string.IsNullOrEmpty(usuario)) return BadRequest("El usuario no puede ir vacio.");
-            if (string.IsNullOrEmpty(fechaDesde) || string.IsNullOrEmpty(fechaHasta)) return BadRequest("Los parametros no puede ir vacios.");
-            if (!DateTime.TryParse(fechaDesde, out var TimeFixedDesde) || !DateTime.TryParse(fechaHasta, out var TimeFixedHasta))
+            if (string.IsNullOrEmpty(request.Usuario)) return BadRequest("El usuario no puede ir vacio.");
+            if (string.IsNullOrEmpty(request.FechaDesde) || string.IsNullOrEmpty(request.FechaHasta)) return BadRequest("Los parametros no puede ir vacios.");
+            if (!DateTime.TryParse(request.FechaDesde, out var TimeFixedDesde) || !DateTime.TryParse(request.FechaHasta, out var TimeFixedHasta))
                 return BadRequest("El formato de la fecha no es compatible");
             if (DateTime.Compare(TimeFixedHasta, TimeFixedDesde) < 0)
                 return BadRequest("Los rangos de fecha están cambiados. Limite 'hasta' es menor a la fecha 'desde'");
@@ -962,7 +962,7 @@ namespace CargaBd.API.Controllers
                             ParameterName = "@hash",
                             SqlDbType = SqlDbType.NVarChar,
                             Direction = ParameterDirection.Input,
-                            Value = usuario
+                            Value = request.Usuario
                         }
                     }
                 };
@@ -1255,10 +1255,10 @@ namespace CargaBd.API.Controllers
         }
 
         [HttpPost("Referencia")]
-        public async Task<IActionResult> ObtenerPayloadPorReference(string referencia,string usuario)
+        public async Task<IActionResult> ObtenerPayloadPorReference([FromBody]ReferenciaDto request)
         {
-            if (string.IsNullOrEmpty(usuario)) return BadRequest("El usuario no puede ir vacio.");
-            if (string.IsNullOrEmpty(referencia)) return BadRequest("La referencia no puede ser nula");
+            if (string.IsNullOrEmpty(request.Usuario)) return BadRequest("El usuario no puede ir vacio.");
+            if (string.IsNullOrEmpty(request.Referencia)) return BadRequest("La referencia no puede ser nula");
             await using var connection = new SqlConnection(_config.GetConnectionString("conexion"));
             var nameUser = string.Empty;
             //OBTENER USUARIO
@@ -1272,7 +1272,7 @@ namespace CargaBd.API.Controllers
                         ParameterName = "@hash",
                         SqlDbType = SqlDbType.NVarChar,
                         Direction = ParameterDirection.Input,
-                        Value = usuario
+                        Value = request.Usuario
                     }
                 }
             };
@@ -1302,7 +1302,7 @@ namespace CargaBd.API.Controllers
                         ParameterName = "@reference",
                         SqlDbType = SqlDbType.NVarChar,
                         Direction = ParameterDirection.Input,
-                        Value = referencia
+                        Value = request.Referencia
                     }, new SqlParameter{
                         ParameterName = "@usuario",
                         SqlDbType = SqlDbType.NVarChar,
@@ -1504,18 +1504,18 @@ namespace CargaBd.API.Controllers
         }
 
         [HttpPost("Masivo")]
-        public async Task<IActionResult> ObtenerPayloadPorFechaReferencia(string fechaDesde, string fechaHasta,string referencia,string usuario)
+        public async Task<IActionResult> ObtenerPayloadPorFechaReferencia([FromBody]MasivaDto request)
         {
-            if (string.IsNullOrEmpty(usuario)) return BadRequest("El usuario no puede ir vacio.");
-            if (string.IsNullOrEmpty(fechaDesde) && string.IsNullOrEmpty(fechaHasta) &&
-                string.IsNullOrEmpty(referencia))
+            if (string.IsNullOrEmpty(request.Usuario)) return BadRequest("El usuario no puede ir vacio.");
+            if (string.IsNullOrEmpty(request.FechaDesde) && string.IsNullOrEmpty(request.FechaHasta) &&
+                string.IsNullOrEmpty(request.Referencia))
                 return BadRequest("Los parametros no pueden ir en vacio.");
             var TimeFixedDesdeDb = string.Empty;
             var TimeFixedHastaDb = string.Empty;
-            if (!fechaDesde.Contains('-') && !fechaHasta.Contains('-'))
+            if (!request.FechaDesde.Contains('-') && !request.FechaHasta.Contains('-'))
             {
-                if (!DateTime.TryParse(fechaDesde, out var TimeFixedDesde) ||
-                    !DateTime.TryParse(fechaHasta, out var TimeFixedHasta))
+                if (!DateTime.TryParse(request.FechaDesde, out var TimeFixedDesde) ||
+                    !DateTime.TryParse(request.FechaHasta, out var TimeFixedHasta))
                     return BadRequest("El formato de la fecha no es compatible");
                 if (DateTime.Compare(TimeFixedHasta, TimeFixedDesde) < 0)
                     return BadRequest("Los rangos de fecha están cambiados. Limite 'hasta' es menor a la fecha 'desde'");
@@ -1537,7 +1537,7 @@ namespace CargaBd.API.Controllers
                             ParameterName = "@hash",
                             SqlDbType = SqlDbType.NVarChar,
                             Direction = ParameterDirection.Input,
-                            Value = usuario
+                            Value = request.Usuario
                         }
                     }
                 };
