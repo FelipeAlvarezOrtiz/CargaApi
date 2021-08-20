@@ -7,7 +7,7 @@
 
     public class NumeroOrdenDto
     {
-        public int NumeroOrden { get; set; }
+        public string NumeroOrden { get; set; }
         public string Usuario { get; set; }
     }
 
