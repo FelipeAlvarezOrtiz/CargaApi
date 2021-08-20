@@ -10,6 +10,7 @@ using CargaBd.API.Context;
 using CargaBd.API.Models;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+using Serilog;
 
 namespace CargaBd.API.Controllers
 {
@@ -34,12 +35,18 @@ namespace CargaBd.API.Controllers
         [HttpPost("CargaPipeline")]
         public async Task<IActionResult> CargarPipeline([FromBody]FechaDto Fecha)
         {
+            Log.Information($"SE HA COMENZADO LA CARGA DESDE FECHA {Fecha.FechaFin}");
             if (!DateTime.TryParse(Fecha.FechaFin, out var TimeFixed))
                 return BadRequest("El formato de la fecha no es compatible");
-            if (DateTime.Compare(TimeFixed, DateTime.Today) > 0)
-                return BadRequest("No se puede consultar al futuro ... todavía");
-            if(DateTime.Compare(TimeFixed,DateTime.Today) == 0)
-                TimeFixed = DateTime.Today.AddDays(-1);
+            switch (DateTime.Compare(TimeFixed, DateTime.Today))
+            {
+                case > 0:
+                    return BadRequest("No se puede consultar al futuro ... todavía");
+                case 0:
+                    TimeFixed = DateTime.Today.AddDays(-1);
+                    break;
+            }
+
             var httpClient = new HttpClient();
             httpClient.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Token", _config.GetValue<string>("Token"));
@@ -452,8 +459,6 @@ namespace CargaBd.API.Controllers
                                 }
                             };
 
-                            
-
                             try
                             {
                                 connection.Open();
@@ -462,6 +467,7 @@ namespace CargaBd.API.Controllers
                             }
                             catch (Exception ex)
                             {
+                                Log.Error(ex, $"HA OCURRIDO UN ERROR EN LA CARGA DE DATOS AL INSERTAR PAYLOAD");
                                 errores++;
                                 Console.Write(ex.Message);
                             }
@@ -509,6 +515,7 @@ namespace CargaBd.API.Controllers
                                 catch (Exception ex)
                                 {
                                     errores++;
+                                    Log.Error(ex, $"HA OCURRIDO UN ERROR EN LA CARGA DE TAGS");
                                     Console.Write(ex.Message);
                                 }
                                 finally
@@ -522,7 +529,6 @@ namespace CargaBd.API.Controllers
                             }
 
                             ;
-
                             #endregion
 
                             #region Insertar Skills Required -- Por cada SR en rustPayload se inserta
@@ -559,6 +565,7 @@ namespace CargaBd.API.Controllers
                                 }
                                 catch (Exception ex)
                                 {
+                                    Log.Error(ex, $"HA OCURRIDO UN ERROR EN LA CARGA DE SKILLS REQUIRED");
                                     errores++;
                                     Console.Write(ex.Message);
                                 }
@@ -611,6 +618,7 @@ namespace CargaBd.API.Controllers
                                 catch (Exception ex)
                                 {
                                     errores++;
+                                    Log.Error(ex, $"HA OCURRIDO UN ERROR EN LA CARGA DE SKILLS OPTIONAL");
                                     Console.Write(ex.Message);
                                 }
                                 finally
@@ -662,6 +670,7 @@ namespace CargaBd.API.Controllers
                                 catch (Exception ex)
                                 {
                                     errores++;
+                                    Log.Error(ex, $"HA OCURRIDO UN ERROR EN LA CARGA DE PICTURES");
                                     Console.Write(ex.Message);
                                 }
                                 finally
@@ -685,10 +694,10 @@ namespace CargaBd.API.Controllers
                 catch(Exception errorException)
                 {
                     Console.WriteLine("Ha ocurrido un error con "+errorException.Message);
+                    Log.Error(errorException,$"HA OCURRIDO UN ERROR EN LA CARGA DE DATOS");
                     TimeFixed = TimeFixed.AddDays(1);
                 }
             }
-
             //fin while
             return errores == 0 ? Ok() : Ok("Se ha completado exitosamente, pero han ocurrido errores. Verificar log");
         }
@@ -731,6 +740,7 @@ namespace CargaBd.API.Controllers
                 catch (Exception exception)
                 {
                     Console.WriteLine($"Ha ocurrido un error al ejecutar el procedure del usuario con mensaje {exception.Message}");
+                    Log.Error(exception, $"HA OCURRIDO UN ERROR AL CONSULTAR POR NUMERO DE ORDEN");
                     return BadRequest("Ha ocurrido un error interno");
                 }
 
@@ -927,6 +937,7 @@ namespace CargaBd.API.Controllers
                 catch (Exception ex)
                 {
                     Console.Write(ex.Message);
+                    Log.Error(ex, $"HA OCURRIDO UN ERROR AL CONSULTAR POR NUMERO DE ORDEN");
                     return Problem(ex.Message);
                 }
                 finally
@@ -982,6 +993,7 @@ namespace CargaBd.API.Controllers
                 catch (Exception exception)
                 {
                     Console.WriteLine($"Ha ocurrido un error al ejecutar el procedure del usuario con mensaje {exception.Message}");
+                    Log.Error(exception, $"HA OCURRIDO UN ERROR AL CONSULTAR POR FECHAS");
                     return BadRequest("Ha ocurrido un error interno");
                 }
 
@@ -1241,10 +1253,11 @@ namespace CargaBd.API.Controllers
                     }
                     return (listaPayloads.Count > 0) ? Ok(listaPayloads) : NotFound("No existe data para los filtros ingresados");
                 }
-                catch (Exception ex)
+                catch (Exception exception)
                 {
                     Console.WriteLine(idActual);
-                    return Problem(ex.Message);
+                    Log.Error(exception, $"HA OCURRIDO UN ERROR AL CONSULTAR POR FECHAS EN EL {idActual}");
+                    return Problem(exception.Message);
                 }
                 finally
                 {
@@ -1292,6 +1305,7 @@ namespace CargaBd.API.Controllers
             catch (Exception exception)
             {
                 Console.WriteLine($"Ha ocurrido un error al ejecutar el procedure del usuario con mensaje {exception.Message}");
+                Log.Error(exception, $"HA OCURRIDO UN ERROR AL CONSULTAR POR REFERENCIA");
                 return BadRequest("Ha ocurrido un error interno");
             }
             var commandObtenerData = new SqlCommand("ObtenerPayloadPorReferencia")
@@ -1492,9 +1506,10 @@ namespace CargaBd.API.Controllers
                 }
                 return (listaPayloads.Count > 0) ? Ok(listaPayloads) : NotFound("No existe data para los filtros ingresados");
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                return Problem(ex.Message);
+                Log.Error(exception, $"HA OCURRIDO UN ERROR AL CONSULTAR POR REFERENCIA");
+                return Problem(exception.Message);
             }
             finally
             {
@@ -1767,9 +1782,10 @@ namespace CargaBd.API.Controllers
                     }
                     return (listaPayloads.Count > 0) ? Ok(listaPayloads) : NotFound("No existe data para los filtros ingresados");
                 }
-                catch (Exception ex)
+                catch (Exception exception)
                 {
-                    return Problem(ex.Message);
+                    Log.Error(exception, $"HA OCURRIDO UN ERROR AL CONSULTAR POR REFERENCIA Y FECHA");
+                    return Problem(exception.Message);
                 }
                 finally
                 {

@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging.Configuration;
+using Serilog;
 
 namespace CargaBd.API
 {
@@ -7,14 +10,17 @@ namespace CargaBd.API
     {
         public static void Main(string[] args)
         {
+            var configuration = new ConfigurationBuilder()
+                .AddJsonFile("appsettings.json").Build();
+            Log.Logger = new LoggerConfiguration().ReadFrom.Configuration(configuration).CreateLogger();
             CreateHostBuilder(args).Build().Run();
         }
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                });
+        public static IHostBuilder CreateHostBuilder(string[] args)
+        {
+            return Host.CreateDefaultBuilder(args)
+                .UseSerilog()
+                .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); });
+        }
     }
 }
