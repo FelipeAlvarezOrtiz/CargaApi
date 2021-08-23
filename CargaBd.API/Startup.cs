@@ -43,7 +43,7 @@ namespace CargaBd.API
             if (env.IsProduction())
             {
                 app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "CargaBd.API v1"));
+                app.UseSwaggerUI(c => c.SwaggerEndpoint("/ApiPikup/swagger/v1/swagger.json", "CargaBd.API v1"));
             }
             app.UseHttpsRedirection();
             app.UseSerilogRequestLogging();

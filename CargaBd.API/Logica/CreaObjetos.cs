@@ -74,19 +74,83 @@ namespace CargaBd.API.Logica
         {
             try
             {
+                var folio = row["REFERENCE"].ToString();
+                var origen = "Santiago";
+                var destino = row["ADDRESS"].ToString();
+                var fechaRecepcion = row["CHECKOUT_TIME"].ToString();
+                var estadoEnvio = row["STATUS"].ToString();
+                var fechaEnvio = row["PLANNED_DATE"].ToString();
+                var fechaEntrega = row["CHECKOUT_TIME"].ToString();
+                var observacion = row["CHECKOUT_COMMENT"].ToString();
+                var seguimiento = row["ID"].ToString();
+                var arrayComment = row["CHECKOUT_COMMENT"].ToString()?.Split("/");
+                var quienRecibeNombre = string.Empty;
+                var quienRecibeRut = string.Empty;
+                switch (arrayComment.Length)
+                {
+                    case 0:
+                        break;
+                    case 1:
+                        break;
+                    case 2:
+                        quienRecibeNombre = arrayComment[1];
+                        break;
+                    case 3:
+                        quienRecibeNombre = arrayComment[1];
+                        quienRecibeRut = arrayComment[2];
+                        break;
+                }
+
+                var intentos = string.Empty;
+                var fechaIntentos = string.Empty;
+                var etaIntentos = string.Empty;
+                var arrayNotes = row["NOTES"].ToString()?.Split("/");
+                switch (arrayNotes.Length)
+                {
+                    case 0:
+                        break;
+                    case 1:
+                        break;
+                    case 2:
+                        intentos = arrayNotes[1];
+                        break;
+                    case 3:
+                        intentos = arrayNotes[1];
+                        fechaIntentos = arrayNotes[2];
+                        break;
+                    case 4:
+                        intentos = arrayNotes[1];
+                        fechaIntentos = arrayNotes[2];
+                        etaIntentos = arrayNotes[3];
+                        break;
+                }
                 return new PayloadCliente()
                 {
-                    tracking_id = row["TRACKING_ID"].ToString(),
-                    status = row["STATUS"].ToString(),
-                    title = row["TITLE"].ToString(),
-                    address = row["ADDRESS"].ToString(),
-                    checkout_comment = row["CHECKOUT_COMMENT"].ToString(),
-                    checkout_time = row["CHECKOUT_TIME"].ToString(),
-                    contact_email = row["CONTACT_EMAIL"].ToString(),
-                    contact_name = row["CONTACT_NAME"].ToString(),
-                    contact_phone = row["CONTACT_PHONE"].ToString(),
-                    notes = row["NOTES"].ToString(),
-                    reference = row["REFERENCE"].ToString()
+                    //tracking_id = row["TRACKING_ID"].ToString(),
+                    //status = row["STATUS"].ToString(),
+                    //title = row["TITLE"].ToString(),
+                    //address = row["ADDRESS"].ToString(),
+                    //checkout_comment = row["CHECKOUT_COMMENT"].ToString(),
+                    //checkout_time = row["CHECKOUT_TIME"].ToString(),
+                    //contact_email = row["CONTACT_EMAIL"].ToString(),
+                    //contact_name = row["CONTACT_NAME"].ToString(),
+                    //contact_phone = row["CONTACT_PHONE"].ToString(),
+                    //notes = row["NOTES"].ToString(),
+                    //reference = row["REFERENCE"].ToString()
+                    Folio = folio,
+                    Origen = origen,
+                    Destino = destino,
+                    FechaRecepcion = fechaRecepcion,
+                    EstadoEnvio = estadoEnvio,
+                    FechaEnvio = fechaEnvio,
+                    FechaEntrega = fechaEntrega,
+                    Observacion = observacion,
+                    Seguimiento = seguimiento,
+                    QuienRecibeNombre = quienRecibeNombre,
+                    QuienRecibeRut = quienRecibeRut,
+                    Intentos = intentos,
+                    FechaIntentos = fechaIntentos,
+                    EtaIntentos = etaIntentos
                 };
             }
             catch (Exception exception)

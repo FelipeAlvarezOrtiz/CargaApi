@@ -422,7 +422,7 @@ namespace CargaBd.API.Controllers
                                         ParameterName = "@EXTRA_FIELD_VALUES",
                                         SqlDbType = SqlDbType.NVarChar,
                                         Direction = ParameterDirection.Input,
-                                        Value = rustPayload.extra_field_values,
+                                        Value = string.Empty,
                                         IsNullable = true
                                     },
                                     new SqlParameter
@@ -465,31 +465,16 @@ namespace CargaBd.API.Controllers
                                 connection.Open();
                                 commandInsertPayload.CommandTimeout = 120000;
                                 commandInsertPayload.ExecuteNonQuery();
-                            }
-                            catch (Exception ex)
-                            {
-                                Log.Error(ex, $"HA OCURRIDO UN ERROR EN LA CARGA DE DATOS AL INSERTAR PAYLOAD");
-                                errores++;
-                                Console.Write(ex.Message);
-                            }
-                            finally
-                            {
-                                if (connection.State == ConnectionState.Open)
-                                {
-                                    connection.Close();
-                                }
-                            }
-                            #endregion
 
-                            #region Insertar Tags -- Por cada TAG en rustPayload se inserta
+                                #region Insertar Tags -- Por cada TAG en rustPayload se inserta
 
-                            foreach (var tag in rustPayload.tags)
-                            {
-                                var commandInsertarTags = new SqlCommand("InsertarTags")
+                                foreach (var tag in rustPayload.tags)
                                 {
-                                    CommandType = CommandType.StoredProcedure,
-                                    Connection = connection,
-                                    Parameters =
+                                    var commandInsertarTags = new SqlCommand("InsertarTags")
+                                    {
+                                        CommandType = CommandType.StoredProcedure,
+                                        Connection = connection,
+                                        Parameters =
                                     {
                                         new SqlParameter
                                         {
@@ -506,41 +491,30 @@ namespace CargaBd.API.Controllers
                                             Value = tag,
                                         }
                                     }
-                                };
-                                try
-                                {
-                                    connection.Open();
-                                    commandInsertarTags.CommandTimeout = 120000;
-                                    commandInsertarTags.ExecuteNonQuery();
-                                }
-                                catch (Exception ex)
-                                {
-                                    errores++;
-                                    Log.Error(ex, $"HA OCURRIDO UN ERROR EN LA CARGA DE TAGS");
-                                    Console.Write(ex.Message);
-                                }
-                                finally
-                                {
-                                    if (connection.State == ConnectionState.Open)
+                                    };
+                                    try
                                     {
-                                        connection.Close();
+                                        commandInsertarTags.CommandTimeout = 120000;
+                                        commandInsertarTags.ExecuteNonQuery();
                                     }
-                                }
+                                    catch (Exception ex)
+                                    {
+                                        errores++;
+                                        Log.Error(ex, $"HA OCURRIDO UN ERROR EN LA CARGA DE TAGS");
+                                        Console.Write(ex.Message);
+                                    }
+                                };
+                                #endregion
 
-                            }
+                                #region Insertar Skills Required -- Por cada SR en rustPayload se inserta
 
-                            ;
-                            #endregion
-
-                            #region Insertar Skills Required -- Por cada SR en rustPayload se inserta
-
-                            foreach (var skillRequired in rustPayload.skills_required)
-                            {
-                                var commandInsertarSR = new SqlCommand("InsertarSkillsRequired")
+                                foreach (var skillRequired in rustPayload.skills_required)
                                 {
-                                    CommandType = CommandType.StoredProcedure,
-                                    Connection = connection,
-                                    Parameters =
+                                    var commandInsertarSR = new SqlCommand("InsertarSkillsRequired")
+                                    {
+                                        CommandType = CommandType.StoredProcedure,
+                                        Connection = connection,
+                                        Parameters =
                                     {
                                         new SqlParameter
                                         {
@@ -557,42 +531,30 @@ namespace CargaBd.API.Controllers
                                             Value = skillRequired,
                                         }
                                     }
-                                };
-                                try
-                                {
-                                    connection.Open();
-                                    commandInsertarSR.CommandTimeout = 120000;
-                                    commandInsertarSR.ExecuteNonQuery();
-                                }
-                                catch (Exception ex)
-                                {
-                                    Log.Error(ex, $"HA OCURRIDO UN ERROR EN LA CARGA DE SKILLS REQUIRED");
-                                    errores++;
-                                    Console.Write(ex.Message);
-                                }
-                                finally
-                                {
-                                    if (connection.State == ConnectionState.Open)
+                                    };
+                                    try
                                     {
-                                        connection.Close();
+                                        commandInsertarSR.CommandTimeout = 120000;
+                                        commandInsertarSR.ExecuteNonQuery();
                                     }
-                                }
+                                    catch (Exception ex)
+                                    {
+                                        Log.Error(ex, $"HA OCURRIDO UN ERROR EN LA CARGA DE SKILLS REQUIRED");
+                                        errores++;
+                                        Console.Write(ex.Message);
+                                    }
+                                };
+                                #endregion
 
-                            }
+                                #region Insertar Skills Optional -- Por cada SO en rustPayload se inserta
 
-                            ;
-
-                            #endregion
-
-                            #region Insertar Skills Optional -- Por cada SO en rustPayload se inserta
-
-                            foreach (var skillOptional in rustPayload.skills_optional)
-                            {
-                                var commandInsertarSO = new SqlCommand("InsertarSkillsOptional")
+                                foreach (var skillOptional in rustPayload.skills_optional)
                                 {
-                                    CommandType = CommandType.StoredProcedure,
-                                    Connection = connection,
-                                    Parameters =
+                                    var commandInsertarSO = new SqlCommand("InsertarSkillsOptional")
+                                    {
+                                        CommandType = CommandType.StoredProcedure,
+                                        Connection = connection,
+                                        Parameters =
                                     {
                                         new SqlParameter
                                         {
@@ -609,42 +571,30 @@ namespace CargaBd.API.Controllers
                                             Value = skillOptional,
                                         }
                                     }
-                                };
-                                try
-                                {
-                                    connection.Open();
-                                    commandInsertarSO.CommandTimeout = 120000;
-                                    commandInsertarSO.ExecuteNonQuery();
-                                }
-                                catch (Exception ex)
-                                {
-                                    errores++;
-                                    Log.Error(ex, $"HA OCURRIDO UN ERROR EN LA CARGA DE SKILLS OPTIONAL");
-                                    Console.Write(ex.Message);
-                                }
-                                finally
-                                {
-                                    if (connection.State == ConnectionState.Open)
+                                    };
+                                    try
                                     {
-                                        connection.Close();
+                                        commandInsertarSO.CommandTimeout = 120000;
+                                        commandInsertarSO.ExecuteNonQuery();
                                     }
-                                }
+                                    catch (Exception ex)
+                                    {
+                                        errores++;
+                                        Log.Error(ex, $"HA OCURRIDO UN ERROR EN LA CARGA DE SKILLS OPTIONAL");
+                                        Console.Write(ex.Message);
+                                    }
+                                };
+                                #endregion
 
-                            }
+                                #region Insertar Pictures -- Por cada picture en rustPyload se inserta
 
-                            ;
-
-                            #endregion
-
-                            #region Insertar Pictures -- Por cada picture en rustPyload se inserta
-
-                            foreach (var picture in rustPayload.pictures)
-                            {
-                                var commandInsertarPicture = new SqlCommand("InsertarPicture")
+                                foreach (var picture in rustPayload.pictures)
                                 {
-                                    CommandType = CommandType.StoredProcedure,
-                                    Connection = connection,
-                                    Parameters =
+                                    var commandInsertarPicture = new SqlCommand("InsertarPicture")
+                                    {
+                                        CommandType = CommandType.StoredProcedure,
+                                        Connection = connection,
+                                        Parameters =
                                     {
                                         new SqlParameter
                                         {
@@ -661,31 +611,35 @@ namespace CargaBd.API.Controllers
                                             Value = picture,
                                         }
                                     }
-                                };
-                                try
-                                {
-                                    connection.Open();
-                                    commandInsertarPicture.CommandTimeout = 120000;
-                                    commandInsertarPicture.ExecuteNonQuery();
-                                }
-                                catch (Exception ex)
-                                {
-                                    errores++;
-                                    Log.Error(ex, $"HA OCURRIDO UN ERROR EN LA CARGA DE PICTURES");
-                                    Console.Write(ex.Message);
-                                }
-                                finally
-                                {
-                                    if (connection.State == ConnectionState.Open)
+                                    };
+                                    try
                                     {
-                                        connection.Close();
+                                        commandInsertarPicture.CommandTimeout = 120000;
+                                        commandInsertarPicture.ExecuteNonQuery();
                                     }
-                                }
+                                    catch (Exception ex)
+                                    {
+                                        errores++;
+                                        Log.Error(ex, $"HA OCURRIDO UN ERROR EN LA CARGA DE PICTURES");
+                                        Console.Write(ex.Message);
+                                    }
+                                };
 
+                                #endregion
                             }
-
-                            ;
-
+                            catch (Exception ex)
+                            {
+                                Log.Error(ex, $"HA OCURRIDO UN ERROR EN LA CARGA DE DATOS AL INSERTAR PAYLOAD");
+                                errores++;
+                                Console.Write(ex.Message);
+                            }
+                            finally
+                            {
+                                if (connection.State == ConnectionState.Open)
+                                {
+                                    connection.Close();
+                                }
+                            }
                             #endregion
                         }
                     }
@@ -1468,7 +1422,7 @@ namespace CargaBd.API.Controllers
                 return BadRequest("Los parametros no pueden ir en vacio.");
             var TimeFixedDesdeDb = string.Empty;
             var TimeFixedHastaDb = string.Empty;
-            if (!request.FechaDesde.Equals('-') && !request.FechaHasta.Equals('-'))
+            if (!request.FechaDesde.Equals("-") && !request.FechaHasta.Equals("-"))
             {
                 if (!DateTime.TryParse(request.FechaDesde, out var TimeFixedDesde) ||
                     !DateTime.TryParse(request.FechaHasta, out var TimeFixedHasta))
