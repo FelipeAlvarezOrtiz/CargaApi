@@ -20,12 +20,10 @@ namespace CargaBd.API.Controllers
     [ApiController]
     public class PayloadController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
         private readonly IConfiguration _config;
 
-        public PayloadController(ApplicationDbContext context, IConfiguration config)
+        public PayloadController(IConfiguration config)
         {
-            _context = context;
             _config = config;
         }
         
@@ -1669,6 +1667,5 @@ namespace CargaBd.API.Controllers
             }
         }
         
-
     }
 }
