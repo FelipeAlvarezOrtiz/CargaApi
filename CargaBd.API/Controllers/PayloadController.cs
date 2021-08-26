@@ -878,6 +878,8 @@ namespace CargaBd.API.Controllers
                 return BadRequest("El formato de la fecha no es compatible");
             if (DateTime.Compare(TimeFixedHasta, TimeFixedDesde) < 0)
                 return BadRequest("Los rangos de fecha están cambiados. Limite 'hasta' es menor a la fecha 'desde'");
+            if (DateTime.Compare(TimeFixedDesde.AddDays(30), TimeFixedHasta) <= 0)
+                return BadRequest("Las fechas no pueden llevar por más de 30 días");
             var TimeFixedDesdeDb = TimeFixedDesde.ToString("yyyy-MM-dd");
             var TimeFixedHastaDb = TimeFixedHasta.ToString("yyyy-MM-dd");
             await using var connection = new SqlConnection(_config.GetConnectionString("conexion"));
