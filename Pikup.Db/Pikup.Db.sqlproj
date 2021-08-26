@@ -63,6 +63,7 @@
     <Folder Include="V2\Procedimientos\Inserts" />
     <Folder Include="V2\Procedimientos\SelectAdmin" />
     <Folder Include="V2\Procedimientos\SelectUsers" />
+    <Folder Include="V2\Procedimientos\Misc" />
   </ItemGroup>
   <ItemGroup>
     <Build Include="V2\Tablas\Payload.sql" />
@@ -76,5 +77,14 @@
     <Build Include="V2\Procedimientos\Inserts\InsertarSkillsOptional.sql" />
     <Build Include="V2\Procedimientos\Inserts\InsertarSkillsRequired.sql" />
     <Build Include="V2\Procedimientos\Inserts\InsertarTags.sql" />
+    <Build Include="V2\Procedimientos\SelectUsers\ObtenerPayloadSegunTrack.sql" />
+    <Build Include="V2\Procedimientos\Misc\ObtenerTagsSegunId.sql" />
+    <Build Include="V2\Procedimientos\Misc\ObtenerPicturesSegunId.sql" />
+    <Build Include="V2\Procedimientos\Misc\ObtenerSkillsOptionalsSegunId.sql" />
+    <Build Include="V2\Procedimientos\Misc\ObtenerSkillsRequiredSegunId.sql" />
+    <Build Include="V2\Procedimientos\SelectUsers\ObtenerPayloadEntreFechas.sql" />
+    <Build Include="V2\Procedimientos\SelectUsers\ObtenerPayloadPorReferencia.sql" />
+    <Build Include="V2\Procedimientos\SelectUsers\ObtenerPayloadEntreFechasYReferencia.sql" />
+    <Build Include="V2\Procedimientos\SelectUsers\ObtenerUsuario.sql" />
   </ItemGroup>
 </Project>
