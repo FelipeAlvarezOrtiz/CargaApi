@@ -953,178 +953,132 @@ namespace CargaBd.API.Controllers
                 dataAdapter.Fill(tablaResult);
                 if (tablaResult.Rows.Count <= 0)
                     return NotFound("No se han encontrado datos en relación a los parametros de búsqueda.");
-                if (esAdmin)
-                {
-                    var listaPayloads = new List<PayloadDto>();
-                    foreach (DataRow row in tablaResult.Rows)
-                    {
-                        var dtoRespuesta = new PayloadDto();
-                        #region Parse testing
-                        var idPayload = int.Parse(row["ID"].ToString());
-                        idActual = int.Parse(row["ID"].ToString());
-                        //var id = int.Parse(row["ID"].ToString() ?? string.Empty);
-                        //int? order = int.TryParse(row["ORDER"].ToString(), out var orderParsed) ? orderParsed : null;
-                        var tracking_id = row["TRACKING_ID"].ToString();
-                        var status = row["STATUS"].ToString();
-                        var title = row["TITLE"].ToString();
-                        var address = row["ADDRESS"].ToString();
-                        var checkin_time = row["CHECKIN_TIME"].ToString();
-                        var checkout_comment = row["CHECKOUT_COMMENT"].ToString();
-                        var checkout_latitude = row["CHECKOUT_LATITUDE"].ToString();
-                        var checkout_longitude = row["CHECKOUT_LONGITUDE"].ToString();
-                        var checkout_observation = row["CHECKOUT_OBSERVATION"].ToString();
-                        var checkout_time = row["CHECKOUT_TIME"].ToString();
-                        var contact_email = row["CONTACT_EMAIL"].ToString();
-                        var contact_name = row["CONTACT_NAME"].ToString();
-                        var contact_phone = row["CONTACT_PHONE"].ToString();
-                        var created = row["CREATED"].ToString();
-                        var current_eta = row["CURRENT_ETA"].ToString();
-                        var duration = row["DURATION"].ToString();
-                        var estimated_time_arrival = row["ESTIMATED_TIME_ARRIVAL"].ToString();
-                        var estimated_time_departure = row["ESTIMATED_TIME_DEPARTURE"].ToString();
-                        var eta_current = row["ETA_CURRENT"].ToString();
-                        var eta_predicted = row["ETA_PREDICTED"].ToString();
-                        var extra_field_values = row["EXTRA_FIELD_VALUES"].ToString();
-                        var fleet = row["FLEET"].ToString();
-                        var geocode_alert = row["GEOCODE_ALERT"].ToString();
-                        var has_alert = row["HAS_ALERT"].ToString().Equals("true");
-                        var latitude = row["LATITUDE"].ToString();
-                        var longitude = row["LONGITUDE"].ToString();
-                        var modified = row["MODIFIED"].ToString();
-                        var notes = row["NOTES"].ToString();
-                        var planned_date = row["PLANNED_DATE"].ToString();
-                        var priority = row["PRIORITY"].ToString().Equals("true");
-                        var programmed_date = row["PROGRAMMED_DATE"].ToString();
-                        var window_start_2 = row["WINDOW_START_2"].ToString();
-                        var window_end = row["WINDOW_END"].ToString();
-                        var window_start = row["WINDOW_START"].ToString();
-                        var window_end_2 = row["WINDOW_END_2"].ToString();
-                        var visit_type = row["VISIT_TYPE"].ToString();
-                        var signature = row["SIGNATURE"].ToString();
-                        var route_estimated_time_start = row["ROUTE_ESTIMATED_TIME_START"].ToString();
-                        var route = row["ROUTE"].ToString();
-                        var reference = row["REFERENCE"].ToString();
-                        var vehicle = int.Parse(row["VEHICLE"].ToString());
-                        //var driver = int.Parse(row["DRIVER"].ToString() ?? string.Empty);
-                        //var priority_level = int.Parse(row["PRIORITY_LEVEL"].ToString() ?? string.Empty);
-                        var load = decimal.Parse(row["LOAD"].ToString());
-                        var load_2 = decimal.Parse(row["LOAD_2"].ToString());
-                        var load_3 = decimal.Parse(row["LOAD_3"].ToString());
-                        #endregion
-                        dtoRespuesta = CreaObjetos.CreaObjetoAdmin(row);
+                
+                #region Es admin region - removida
+                //if (esAdmin)
+                //{
+                //    var listaPayloads = new List<PayloadDto>();
+                //    foreach (DataRow row in tablaResult.Rows)
+                //    {
+                //        var dtoRespuesta = new PayloadDto();
 
-                        #region Cargar TAGS
-                        var commandObtenerTags = new SqlCommand("ObtenerTagsSegunId")
-                        {
-                            CommandType = CommandType.StoredProcedure,
-                            Connection = connection,
-                            Parameters =
-                            {
-                                new SqlParameter{
-                                    ParameterName = "@id",
-                                    SqlDbType = SqlDbType.Int,
-                                    Direction = ParameterDirection.Input,
-                                    Value = idPayload
-                                }
-                            }
-                        };
-                        var dataAdapterTags = new SqlDataAdapter(commandObtenerTags);
-                        var tablaTags = new DataTable();
-                        dataAdapterTags.Fill(tablaTags);
-                        dtoRespuesta.tags = new string[tablaTags.Rows.Count];
-                        var iteradorTags = 0;
-                        foreach (DataRow tags in tablaTags.Rows)
-                        {
-                            dtoRespuesta.tags[iteradorTags] = tags["NAMETAG"].ToString();
-                            iteradorTags++;
-                        }
-                        #endregion
+                //        var idPayload = int.Parse(row["ID"].ToString());
 
-                        #region Cargar Pictures
-                        var commandObtenerPictures = new SqlCommand("ObtenerPicturesSegunId")
-                        {
-                            CommandType = CommandType.StoredProcedure,
-                            Connection = connection,
-                            Parameters =
-                            {
-                                new SqlParameter{
-                                    ParameterName = "@id",
-                                    SqlDbType = SqlDbType.Int,
-                                    Direction = ParameterDirection.Input,
-                                    Value = idPayload
-                                }
-                            }
-                        };
-                        var dataAdapterPictures = new SqlDataAdapter(commandObtenerPictures);
-                        var tablaPictures = new DataTable();
-                        dataAdapterPictures.Fill(tablaPictures);
-                        dtoRespuesta.pictures = new string[tablaPictures.Rows.Count];
-                        var iteradorPictures = 0;
-                        foreach (DataRow pictures in tablaPictures.Rows)
-                        {
-                            dtoRespuesta.pictures[iteradorPictures] = pictures["URLPICTURE"].ToString();
-                            iteradorPictures++;
-                        }
-                        #endregion
+                //        dtoRespuesta = CreaObjetos.CreaObjetoAdmin(row);
 
-                        #region Cargar SkillsRequired
-                        var commandObtenerSR = new SqlCommand("ObtenerSkillsRequiredSegunId")
-                        {
-                            CommandType = CommandType.StoredProcedure,
-                            Connection = connection,
-                            Parameters =
-                            {
-                                new SqlParameter{
-                                    ParameterName = "@id",
-                                    SqlDbType = SqlDbType.Int,
-                                    Direction = ParameterDirection.Input,
-                                    Value = idPayload
-                                }
-                            }
-                        };
-                        var dataAdapterSR = new SqlDataAdapter(commandObtenerSR);
-                        var tablaSR = new DataTable();
-                        dataAdapterSR.Fill(tablaSR);
-                        dtoRespuesta.skills_required = new int[tablaSR.Rows.Count];
-                        var iteradorSR = 0;
-                        foreach (DataRow skillsRequired in tablaSR.Rows)
-                        {
-                            dtoRespuesta.skills_required[iteradorSR] = int.Parse(skillsRequired["NAMESR"].ToString());
-                            iteradorSR++;
-                        }
-                        #endregion
+                //        #region Cargar TAGS
+                //        var commandObtenerTags = new SqlCommand("ObtenerTagsSegunId")
+                //        {
+                //            CommandType = CommandType.StoredProcedure,
+                //            Connection = connection,
+                //            Parameters =
+                //            {
+                //                new SqlParameter{
+                //                    ParameterName = "@id",
+                //                    SqlDbType = SqlDbType.Int,
+                //                    Direction = ParameterDirection.Input,
+                //                    Value = idPayload
+                //                }
+                //            }
+                //        };
+                //        var dataAdapterTags = new SqlDataAdapter(commandObtenerTags);
+                //        var tablaTags = new DataTable();
+                //        dataAdapterTags.Fill(tablaTags);
+                //        dtoRespuesta.tags = new string[tablaTags.Rows.Count];
+                //        var iteradorTags = 0;
+                //        foreach (DataRow tags in tablaTags.Rows)
+                //        {
+                //            dtoRespuesta.tags[iteradorTags] = tags["NAMETAG"].ToString();
+                //            iteradorTags++;
+                //        }
+                //        #endregion
 
-                        #region Cargar SkillsOptionals
-                        var commandObtenerSO = new SqlCommand("ObtenerSkillsOptionalsSegunId")
-                        {
-                            CommandType = CommandType.StoredProcedure,
-                            Connection = connection,
-                            Parameters =
-                            {
-                                new SqlParameter{
-                                    ParameterName = "@id",
-                                    SqlDbType = SqlDbType.Int,
-                                    Direction = ParameterDirection.Input,
-                                    Value = idPayload
-                                }
-                            }
-                        };
-                        var dataAdapterSO = new SqlDataAdapter(commandObtenerSO);
-                        var tablaSO = new DataTable();
-                        dataAdapterSO.Fill(tablaSO);
-                        dtoRespuesta.skills_optional = new int[tablaSR.Rows.Count];
-                        var iteradorSO = 0;
-                        foreach (DataRow skillsOptional in tablaSO.Rows)
-                        {
-                            dtoRespuesta.skills_optional[iteradorSO] = int.Parse(skillsOptional["NAMESO"].ToString());
-                            iteradorSO++;
-                        }
-                        #endregion
+                //        #region Cargar Pictures
+                //        var commandObtenerPictures = new SqlCommand("ObtenerPicturesSegunId")
+                //        {
+                //            CommandType = CommandType.StoredProcedure,
+                //            Connection = connection,
+                //            Parameters =
+                //            {
+                //                new SqlParameter{
+                //                    ParameterName = "@id",
+                //                    SqlDbType = SqlDbType.Int,
+                //                    Direction = ParameterDirection.Input,
+                //                    Value = idPayload
+                //                }
+                //            }
+                //        };
+                //        var dataAdapterPictures = new SqlDataAdapter(commandObtenerPictures);
+                //        var tablaPictures = new DataTable();
+                //        dataAdapterPictures.Fill(tablaPictures);
+                //        dtoRespuesta.pictures = new string[tablaPictures.Rows.Count];
+                //        var iteradorPictures = 0;
+                //        foreach (DataRow pictures in tablaPictures.Rows)
+                //        {
+                //            dtoRespuesta.pictures[iteradorPictures] = pictures["URLPICTURE"].ToString();
+                //            iteradorPictures++;
+                //        }
+                //        #endregion
 
-                        listaPayloads.Add(dtoRespuesta);
-                    }
-                    return (listaPayloads.Count > 0) ? Ok(listaPayloads) : NotFound("No existe data para los filtros ingresados");
-                }
+                //        #region Cargar SkillsRequired
+                //        var commandObtenerSR = new SqlCommand("ObtenerSkillsRequiredSegunId")
+                //        {
+                //            CommandType = CommandType.StoredProcedure,
+                //            Connection = connection,
+                //            Parameters =
+                //            {
+                //                new SqlParameter{
+                //                    ParameterName = "@id",
+                //                    SqlDbType = SqlDbType.Int,
+                //                    Direction = ParameterDirection.Input,
+                //                    Value = idPayload
+                //                }
+                //            }
+                //        };
+                //        var dataAdapterSR = new SqlDataAdapter(commandObtenerSR);
+                //        var tablaSR = new DataTable();
+                //        dataAdapterSR.Fill(tablaSR);
+                //        dtoRespuesta.skills_required = new int[tablaSR.Rows.Count];
+                //        var iteradorSR = 0;
+                //        foreach (DataRow skillsRequired in tablaSR.Rows)
+                //        {
+                //            dtoRespuesta.skills_required[iteradorSR] = int.Parse(skillsRequired["NAMESR"].ToString());
+                //            iteradorSR++;
+                //        }
+                //        #endregion
+
+                //        #region Cargar SkillsOptionals
+                //        var commandObtenerSO = new SqlCommand("ObtenerSkillsOptionalsSegunId")
+                //        {
+                //            CommandType = CommandType.StoredProcedure,
+                //            Connection = connection,
+                //            Parameters =
+                //            {
+                //                new SqlParameter{
+                //                    ParameterName = "@id",
+                //                    SqlDbType = SqlDbType.Int,
+                //                    Direction = ParameterDirection.Input,
+                //                    Value = idPayload
+                //                }
+                //            }
+                //        };
+                //        var dataAdapterSO = new SqlDataAdapter(commandObtenerSO);
+                //        var tablaSO = new DataTable();
+                //        dataAdapterSO.Fill(tablaSO);
+                //        dtoRespuesta.skills_optional = new int[tablaSR.Rows.Count];
+                //        var iteradorSO = 0;
+                //        foreach (DataRow skillsOptional in tablaSO.Rows)
+                //        {
+                //            dtoRespuesta.skills_optional[iteradorSO] = int.Parse(skillsOptional["NAMESO"].ToString());
+                //            iteradorSO++;
+                //        }
+                //        #endregion
+
+                //        listaPayloads.Add(dtoRespuesta);
+                //    }
+                //    return (listaPayloads.Count > 0) ? Ok(listaPayloads) : NotFound("No existe data para los filtros ingresados");
+                //}
+                #endregion
 
                 var listaPayloadCliente = new List<PayloadCliente>();
                 foreach (DataRow row in tablaResult.Rows)
@@ -1710,5 +1664,34 @@ namespace CargaBd.API.Controllers
             }
         }
 
+        public DataTable ObtenerTodosLosDatos(SqlConnection connection)
+        {
+            var commandObtenerData = new SqlCommand("ObtenerPayloadEntreFechasYReferencia")
+            {
+                CommandType = CommandType.StoredProcedure,
+                Connection = connection,
+                Parameters =
+                {
+                    //new SqlParameter{
+                    //    ParameterName = "@fechaDesde",
+                    //    SqlDbType = SqlDbType.NVarChar,
+                    //    Direction = ParameterDirection.Input,
+                    //    Value = TimeFixedDesdeDb
+                    //}
+                }
+            };
+            try
+            {
+                var tablaResult = new DataTable();
+                commandObtenerData.CommandTimeout = 120000;
+                var dataAdapter = new SqlDataAdapter(commandObtenerData);
+                dataAdapter.Fill(tablaResult);
+                return tablaResult;
+            }
+            catch (Exception exception)
+            {
+                return new DataTable();
+            }
+        }
     }
 }
