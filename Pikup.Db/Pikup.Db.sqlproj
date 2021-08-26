@@ -64,6 +64,7 @@
     <Folder Include="V2\Procedimientos\SelectAdmin" />
     <Folder Include="V2\Procedimientos\SelectUsers" />
     <Folder Include="V2\Procedimientos\Misc" />
+    <Folder Include="V1\Tablas" />
   </ItemGroup>
   <ItemGroup>
     <Build Include="V2\Tablas\Payload.sql" />
@@ -86,5 +87,11 @@
     <Build Include="V2\Procedimientos\SelectUsers\ObtenerPayloadPorReferencia.sql" />
     <Build Include="V2\Procedimientos\SelectUsers\ObtenerPayloadEntreFechasYReferencia.sql" />
     <Build Include="V2\Procedimientos\SelectUsers\ObtenerUsuario.sql" />
+    <Build Include="V2\Procedimientos\SelectAdmin\ObtenerPayloadEntreFechasAdmin.sql" />
+    <Build Include="V2\Procedimientos\SelectAdmin\ObtenerPayloadEntreFechasYRefAdmin.sql" />
+    <Build Include="V2\Procedimientos\SelectAdmin\ObtenerPayloadPorReferenciaAdmin.sql" />
+    <Build Include="V2\Procedimientos\SelectAdmin\ObtenerPayloadSegunTrackAdmin.sql" />
+    <Build Include="V1\Tablas\PayloadV1.sql" />
+    <Build Include="V1\Tablas\SkillsRequiredV1.sql" />
   </ItemGroup>
 </Project>

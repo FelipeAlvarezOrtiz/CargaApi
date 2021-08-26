@@ -118,7 +118,7 @@ namespace CargaBd.API.Logica
             catch (Exception exception)
             {
                 Log.Error(exception,"HA OCURRIDO UN ERROR AL CREAR UN OBJETO PARA EL ADMIN CON ID "+ id);
-                return null;
+                throw;
             }
         }
 
@@ -207,7 +207,7 @@ namespace CargaBd.API.Logica
             catch (Exception exception)
             {
                 Log.Error(exception, "HA OCURRIDO UN ERROR AL CREAR UN OBJETO PARA EL CLIENTE");
-                return null;
+                throw;
             }
         }
     }
