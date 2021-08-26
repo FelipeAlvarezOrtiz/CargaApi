@@ -27,18 +27,12 @@ namespace CargaBd.API.Controllers
             _context = context;
             _config = config;
         }
-
-        /// <summary>
-        /// Inicia una carga desde una fecha de inicio hasta el dia de hoy, enviar la fecha actual para hacer una carga diaria
-        /// </summary>
-        /// <param name="FechaFin">Fecha en formato dd-MM-yyyy</param>
-        /// <returns></returns>
+        
         [HttpPost("CargaPipeline")]
         public async Task<IActionResult> CargarPipeline([FromBody]FechaDto Fecha)
         {
-            Log.Information($"SE HA COMENZADO LA CARGA DESDE FECHA {Fecha.FechaFin}");
             if (!DateTime.TryParse(Fecha.FechaFin, out var TimeFixed))
-                return BadRequest("El formato de la fecha no es compatible");
+                return BadRequest("El formato de la fecha no es compatible, se espera formato dd-MM-yyyy");
             switch (DateTime.Compare(TimeFixed, DateTime.Today))
             {
                 case > 0:
@@ -58,14 +52,16 @@ namespace CargaBd.API.Controllers
                 try
                 {
                     var TimeFixedApi = TimeFixed.ToString("yyyy-MM-dd");
+                    Log.Information($"SE HA COMENZADO LA CARGA DESDE FECHA {TimeFixedApi}");
                     var result =
                         await httpClient.GetFromJsonAsync<List<PayloadDto>>(_config.GetValue<string>("Url") +
                                                                             TimeFixedApi);
                     if (result is null) return NotFound("No se han encontrado datos");
-                    using (var connection = new SqlConnection(_config.GetConnectionString("conexion")))
+                    await using (var connection = new SqlConnection(_config.GetConnectionString("conexion")))
                     {
                         foreach (var rustPayload in result)
                         {
+                            var idInsertado = 0;
                             #region Insertar Payload
 
                             var commandInsertPayload = new SqlCommand("InsertarPayload")
@@ -457,6 +453,12 @@ namespace CargaBd.API.Controllers
                                         Value = rustPayload.fleet,
                                         IsNullable = true
                                     },
+                                    new SqlParameter
+                                    {
+                                        ParameterName = "@idInsertado",
+                                        SqlDbType = SqlDbType.Int,
+                                        Direction = ParameterDirection.Output
+                                    }
                                 }
                             };
 
@@ -465,6 +467,8 @@ namespace CargaBd.API.Controllers
                                 connection.Open();
                                 commandInsertPayload.CommandTimeout = 120000;
                                 commandInsertPayload.ExecuteNonQuery();
+                                
+                                var returnValue = (int)commandInsertPayload.Parameters["@idInsertado"].Value;
 
                                 #region Insertar Tags -- Por cada TAG en rustPayload se inserta
 
@@ -481,7 +485,7 @@ namespace CargaBd.API.Controllers
                                             ParameterName = "@IdPayload",
                                             SqlDbType = SqlDbType.Int,
                                             Direction = ParameterDirection.Input,
-                                            Value = rustPayload.id,
+                                            Value = returnValue,
                                         },
                                         new SqlParameter
                                         {
@@ -515,22 +519,22 @@ namespace CargaBd.API.Controllers
                                         CommandType = CommandType.StoredProcedure,
                                         Connection = connection,
                                         Parameters =
-                                    {
-                                        new SqlParameter
                                         {
-                                            ParameterName = "@IdPayload",
-                                            SqlDbType = SqlDbType.Int,
-                                            Direction = ParameterDirection.Input,
-                                            Value = rustPayload.id,
-                                        },
-                                        new SqlParameter
-                                        {
-                                            ParameterName = "@NombreSR",
-                                            SqlDbType = SqlDbType.NVarChar,
-                                            Direction = ParameterDirection.Input,
-                                            Value = skillRequired,
+                                            new SqlParameter
+                                            {
+                                                ParameterName = "@IdPayload",
+                                                SqlDbType = SqlDbType.Int,
+                                                Direction = ParameterDirection.Input,
+                                                Value = returnValue,
+                                            },
+                                            new SqlParameter
+                                            {
+                                                ParameterName = "@NombreSR",
+                                                SqlDbType = SqlDbType.NVarChar,
+                                                Direction = ParameterDirection.Input,
+                                                Value = skillRequired,
+                                            }
                                         }
-                                    }
                                     };
                                     try
                                     {
@@ -561,7 +565,7 @@ namespace CargaBd.API.Controllers
                                             ParameterName = "@IdPayload",
                                             SqlDbType = SqlDbType.Int,
                                             Direction = ParameterDirection.Input,
-                                            Value = rustPayload.id,
+                                            Value = returnValue,
                                         },
                                         new SqlParameter
                                         {
@@ -601,7 +605,7 @@ namespace CargaBd.API.Controllers
                                             ParameterName = "@IdPayload",
                                             SqlDbType = SqlDbType.Int,
                                             Direction = ParameterDirection.Input,
-                                            Value = rustPayload.id,
+                                            Value = returnValue,
                                         },
                                         new SqlParameter
                                         {
@@ -643,7 +647,7 @@ namespace CargaBd.API.Controllers
                             #endregion
                         }
                     }
-
+                    Log.Information($"HA FINALIZADO LA CARGA DEL DÍA.");
                     TimeFixed = TimeFixed.AddDays(1);
                 }
                 catch(Exception errorException)
@@ -1663,35 +1667,7 @@ namespace CargaBd.API.Controllers
                 }
             }
         }
+        
 
-        public DataTable ObtenerTodosLosDatos(SqlConnection connection)
-        {
-            var commandObtenerData = new SqlCommand("ObtenerPayloadEntreFechasYReferencia")
-            {
-                CommandType = CommandType.StoredProcedure,
-                Connection = connection,
-                Parameters =
-                {
-                    //new SqlParameter{
-                    //    ParameterName = "@fechaDesde",
-                    //    SqlDbType = SqlDbType.NVarChar,
-                    //    Direction = ParameterDirection.Input,
-                    //    Value = TimeFixedDesdeDb
-                    //}
-                }
-            };
-            try
-            {
-                var tablaResult = new DataTable();
-                commandObtenerData.CommandTimeout = 120000;
-                var dataAdapter = new SqlDataAdapter(commandObtenerData);
-                dataAdapter.Fill(tablaResult);
-                return tablaResult;
-            }
-            catch (Exception exception)
-            {
-                return new DataTable();
-            }
-        }
     }
 }

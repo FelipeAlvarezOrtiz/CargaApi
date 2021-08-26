@@ -28,7 +28,7 @@ namespace CargaBd.API
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "CargaBd.API", Version = "v1" });
+                c.SwaggerDoc("v1.2", new OpenApiInfo { Title = "CargaDatos.Pikup", Version = "v1.2" });
             });
         }
         
@@ -38,12 +38,12 @@ namespace CargaBd.API
             {
                 app.UseDeveloperExceptionPage();
                 app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "CargaBd.API v1"));
+                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1.2/swagger.json", "CargaDatos.Pikup v1.2"));
             }
             if (env.IsProduction())
             {
                 app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/ApiPikup/swagger/v1/swagger.json", "CargaBd.API v1"));
+                app.UseSwaggerUI(c => c.SwaggerEndpoint("/ApiPikup/swagger/v1/swagger.json", "CargaDatos.Pikup v1.2"));
             }
             app.UseHttpsRedirection();
             app.UseSerilogRequestLogging();
