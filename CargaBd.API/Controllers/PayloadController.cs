@@ -4,6 +4,7 @@ using System.Data;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using CargaBd.API.Context;
@@ -29,7 +30,7 @@ namespace CargaBd.API.Controllers
         }
         
         [HttpPost("CargaPipeline")]
-        public async Task<IActionResult> CargarPipeline([FromBody]FechaDto Fecha)
+        public async Task<IActionResult> CargarPipeline([FromBody]FechaDto Fecha,CancellationToken cancellationToken)
         {
             if (!DateTime.TryParse(Fecha.FechaFin, out var TimeFixed))
                 return BadRequest("El formato de la fecha no es compatible, se espera formato dd-MM-yyyy");

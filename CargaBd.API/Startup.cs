@@ -1,4 +1,5 @@
 using CargaBd.API.Context;
+using CargaBd.API.Middlewares;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -34,16 +35,16 @@ namespace CargaBd.API
         
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            app.UseMiddleware<ExceptionMiddleware>();
             if (env.IsDevelopment())
             {
-                app.UseDeveloperExceptionPage();
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1.2/swagger.json", "CargaDatos.Pikup v1.2"));
             }
             if (env.IsProduction())
             {
                 app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/ApiPikup/swagger/v1/swagger.json", "CargaDatos.Pikup v1.2"));
+                app.UseSwaggerUI(c => c.SwaggerEndpoint(Configuration.GetValue<string>("RutSwagProd"), "CargaDatos.Pikup v1.2"));
             }
             app.UseHttpsRedirection();
             app.UseSerilogRequestLogging();

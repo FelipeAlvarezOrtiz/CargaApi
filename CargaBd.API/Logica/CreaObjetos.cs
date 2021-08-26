@@ -117,8 +117,7 @@ namespace CargaBd.API.Logica
             }
             catch (Exception exception)
             {
-                Console.WriteLine(id);
-                Log.Error(exception,"HA OCURRIDO UN ERROR AL CREAR UN OBJETO PARA EL ADMIN");
+                Log.Error(exception,"HA OCURRIDO UN ERROR AL CREAR UN OBJETO PARA EL ADMIN CON ID "+ id);
                 return null;
             }
         }
@@ -153,7 +152,6 @@ namespace CargaBd.API.Logica
                         quienRecibeRut = arrayComment[2];
                         break;
                 }
-
                 var intentos = string.Empty;
                 var fechaIntentos = string.Empty;
                 var etaIntentos = string.Empty;
