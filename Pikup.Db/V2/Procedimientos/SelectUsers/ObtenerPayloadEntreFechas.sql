@@ -10,6 +10,6 @@ CREATE PROCEDURE ObtenerPayloadEntreFechas
 AS
 BEGIN
 	SET NOCOUNT ON;
-	SELECT * FROM PAYLOAD WHERE PAYLOAD.PLANNED_DATE between @fechaDesde and @fechaHasta and PAYLOAD.TITLE = '%'+@usuario+'%' ORDER BY ADDED_DATE DESC;
+	SELECT * FROM PAYLOAD WHERE PAYLOAD.PLANNED_DATE between @fechaDesde and @fechaHasta and PAYLOAD.TITLE like '%'+@usuario+'%' ORDER BY ADDED_DATE DESC;
 END
 GO

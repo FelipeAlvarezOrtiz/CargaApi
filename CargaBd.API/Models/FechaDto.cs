@@ -29,6 +29,15 @@
         public string FechaDesde { get; set; }
         public string FechaHasta { get; set; }
         public string Referencia { get; set; }
+        public string Id { get; set; }
         public string Usuario { get; set; }
+    }
+
+    public class ExtraFieldHelper
+    {
+        public string sep360_nintentof { get; set; }
+        public string sep360_nombrerecibe { get; set; }
+        public string sep360_rutrecibe { get; set; }
+        public string sep360_nintento { get; set; }
     }
 }

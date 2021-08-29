@@ -93,5 +93,8 @@
     <Build Include="V2\Procedimientos\SelectAdmin\ObtenerPayloadSegunTrackAdmin.sql" />
     <Build Include="V1\Tablas\PayloadV1.sql" />
     <Build Include="V1\Tablas\SkillsRequiredV1.sql" />
+    <Build Include="V2\Tablas\ExtraFieldValues.sql" />
+    <Build Include="V2\Procedimientos\Inserts\InsertarExtraFields.sql" />
+    <Build Include="V2\Procedimientos\Misc\ObtenerExtraSegunId.sql" />
   </ItemGroup>
 </Project>

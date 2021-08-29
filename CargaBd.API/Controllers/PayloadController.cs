@@ -7,7 +7,6 @@ using System.Net.Http.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using CargaBd.API.Context;
 using CargaBd.API.Logica;
 using CargaBd.API.Models;
 using Microsoft.Data.SqlClient;
@@ -61,6 +60,7 @@ namespace CargaBd.API.Controllers
                         foreach (var rustPayload in result)
                         {
                             var idInsertado = 0;
+
                             #region Insertar Payload
 
                             var commandInsertPayload = new SqlCommand("InsertarPayload")
@@ -629,6 +629,73 @@ namespace CargaBd.API.Controllers
                                 };
 
                                 #endregion
+
+                                #region Insertar EXTRA FIELDS --
+
+                                rustPayload.extra_field_values ??= new ExtraFieldHelper()
+                                {
+                                    sep360_nintento = string.Empty,
+                                    sep360_nombrerecibe = string.Empty,
+                                    sep360_nintentof = string.Empty,
+                                    sep360_rutrecibe = string.Empty
+                                };
+
+                                var commandInsertarEF = new SqlCommand("InsertarExtraFields")
+                                {
+                                    CommandType = CommandType.StoredProcedure,
+                                    Connection = connection,
+                                    Parameters =
+                                    {
+                                        new SqlParameter
+                                        {
+                                            ParameterName = "@IdPayload",
+                                            SqlDbType = SqlDbType.Int,
+                                            Direction = ParameterDirection.Input,
+                                            Value = returnValue,
+                                        },
+                                        new SqlParameter
+                                        {
+                                            ParameterName = "@intentoF",
+                                            SqlDbType = SqlDbType.NVarChar,
+                                            Direction = ParameterDirection.Input,
+                                            Value = rustPayload.extra_field_values.sep360_nintentof,
+                                        },
+                                        new SqlParameter
+                                        {
+                                            ParameterName = "@nombreRecibe",
+                                            SqlDbType = SqlDbType.NVarChar,
+                                            Direction = ParameterDirection.Input,
+                                            Value = rustPayload.extra_field_values.sep360_nombrerecibe,
+                                        },
+                                        new SqlParameter
+                                        {
+                                            ParameterName = "@rutRecibe",
+                                            SqlDbType = SqlDbType.NVarChar,
+                                            Direction = ParameterDirection.Input,
+                                            Value = rustPayload.extra_field_values.sep360_rutrecibe,
+                                        },
+                                        new SqlParameter
+                                        {
+                                            ParameterName = "@nIntento",
+                                            SqlDbType = SqlDbType.NVarChar,
+                                            Direction = ParameterDirection.Input,
+                                            Value = rustPayload.extra_field_values.sep360_nintento,
+                                        }
+                                    }
+                                };
+                                try
+                                {
+                                    commandInsertarEF.CommandTimeout = 120000;
+                                    commandInsertarEF.ExecuteNonQuery();
+                                }
+                                catch (Exception ex)
+                                {
+                                    errores++;
+                                    Log.Error(ex, $"HA OCURRIDO UN ERROR EN LA CARGA DE EXTRA FIELDS");
+                                    Console.Write(ex.Message);
+                                }
+                                
+                                #endregion
                             }
                             catch (Exception ex)
                             {
@@ -817,6 +884,7 @@ namespace CargaBd.API.Controllers
                                 iteradorSR++;
                             }
                             #endregion
+
                             #region Cargar SkillsOptionals
                             var commandObtenerSO = new SqlCommand("ObtenerSkillsOptionalsSegunId")
                             {
@@ -843,6 +911,33 @@ namespace CargaBd.API.Controllers
                                 iteradorSO++;
                             }
                             #endregion
+
+                            #region Cargar Extra Fields
+                            var commandObtenerEF = new SqlCommand("ObtenerExtraSegunId")
+                            {
+                                CommandType = CommandType.StoredProcedure,
+                                Connection = connection,
+                                Parameters =
+                                {
+                                    new SqlParameter{
+                                        ParameterName = "@id",
+                                        SqlDbType = SqlDbType.Int,
+                                        Direction = ParameterDirection.Input,
+                                        Value = idPayload
+                                    }
+                                }
+                            };
+                            var dataAdapterEF = new SqlDataAdapter(commandObtenerEF);
+                            var tablaEF = new DataTable();
+                            dataAdapterEF.Fill(tablaEF);
+                            //dtoRespuesta.extra_field_values = new string[tablaEF.Rows.Count];
+                            var iteradorEF = 0;
+                            //foreach (DataRow extraField in tablaEF.Rows)
+                            //{
+                            //    dtoRespuesta.extra_field_values[iteradorEF] = (object)extraField["NAMESO"].ToString();}
+                            //    iteradorEF++;
+                            //}
+                            #endregion
                         }
                         return Ok(dtoRespuesta);
                     }
@@ -852,6 +947,34 @@ namespace CargaBd.API.Controllers
                     {
                         var idPayload = int.Parse(row["ID"].ToString());
                         dtoRespuestaCliente = CreaObjetos.CrearObjetoCliente(row);
+                        var commandObtenerEF = new SqlCommand("ObtenerExtraSegunId")
+                        {
+                            CommandType = CommandType.StoredProcedure,
+                            Connection = connection,
+                            Parameters =
+                            {
+                                new SqlParameter{
+                                    ParameterName = "@id",
+                                    SqlDbType = SqlDbType.Int,
+                                    Direction = ParameterDirection.Input,
+                                    Value = idPayload
+                                }
+                            }
+                        };
+                        var dataAdapterEF = new SqlDataAdapter(commandObtenerEF);
+                        var tablaEF = new DataTable();
+                        dataAdapterEF.Fill(tablaEF);
+                        var extraHelperClient = new ExtraFieldHelper
+                        {
+                            sep360_nintento = tablaEF.Rows[0]["NINTENTO"].ToString()?? string.Empty,
+                            sep360_nombrerecibe = tablaEF.Rows[0]["NOMBRERECIBE"].ToString()?? string.Empty,
+                            sep360_nintentof = tablaEF.Rows[0]["INTENTOF"].ToString()?? string.Empty,
+                            sep360_rutrecibe = tablaEF.Rows[0]["RUTRECIBE"].ToString()?? string.Empty,
+                        };
+                        dtoRespuestaCliente.QuienRecibeNombre = extraHelperClient.sep360_nombrerecibe;
+                        dtoRespuestaCliente.QuienRecibeRut = extraHelperClient.sep360_rutrecibe;
+                        dtoRespuestaCliente.Intentos = extraHelperClient.sep360_nintento;
+                        dtoRespuestaCliente.FechaIntentos = extraHelperClient.sep360_nintentof;
                     }
 
                     return Ok(dtoRespuestaCliente);
@@ -1666,6 +1789,328 @@ namespace CargaBd.API.Controllers
                 }
             }
         }
-        
+
+        [HttpPost("Celmedia/Masivo")]
+        public async Task<ActionResult<List<PayloadCliente>>> ObtenerPayloadCelmedia([FromBody]MasivaDto request)
+        {
+            if (string.IsNullOrEmpty(request.Usuario)) return BadRequest("El usuario no puede ir en vacio.");
+            await using var connection = new SqlConnection(_config.GetConnectionString("conexion"));
+            var nombreUsuario = string.Empty;
+            var esAdmin = false;
+            var resultValidacion = FiltroConsulta.ValidaTipoUsuario(connection, request.Usuario);
+            nombreUsuario = resultValidacion.Item1;
+            esAdmin = resultValidacion.Item2;
+            DataTable tablaResult = new();
+            if (!string.IsNullOrEmpty(request.Id))
+            {
+                if (!string.IsNullOrEmpty(request.FechaDesde) || !string.IsNullOrEmpty(request.FechaHasta) || !string.IsNullOrEmpty(request.Referencia))
+                    return BadRequest("NO PUEDES CONSULTAR POR FECHAS SI BUSCAS POR ID");
+                tablaResult = esAdmin
+                    ? FiltroConsulta.ConsultaAdminPorId(request.Id, connection)
+                    : FiltroConsulta.ConsultaClientePorId(request.Id, nombreUsuario, connection);
+            }
+            else if (!string.IsNullOrEmpty(request.FechaDesde) && !string.IsNullOrEmpty(request.FechaHasta))
+            {
+                if (!DateTime.TryParse(request.FechaDesde, out var TimeFixedDesde) || !DateTime.TryParse(request.FechaHasta, out var TimeFixedHasta))
+                    return BadRequest("El formato de la fecha no es compatible");
+                if (DateTime.Compare(TimeFixedHasta, TimeFixedDesde) < 0)
+                    return BadRequest("Los rangos de fecha están cambiados. Limite 'hasta' es menor a la fecha 'desde'");
+                if (DateTime.Compare(TimeFixedDesde.AddDays(30), TimeFixedHasta) <= 0)
+                    return BadRequest("Las fechas no pueden llevar por más de 30 días");
+
+                if (!string.IsNullOrEmpty(request.Referencia))
+                {
+                    tablaResult = esAdmin
+                        ? FiltroConsulta.ConsultaAdminFechasReferencia(TimeFixedDesde.ToShortDateString(),
+                            TimeFixedHasta.ToShortDateString(), request.Referencia, connection)
+                        : FiltroConsulta.ConsultaClienteFechasReferencia(TimeFixedDesde.ToShortDateString(),
+                            TimeFixedHasta.ToShortDateString(), request.Referencia, nombreUsuario, connection);
+                }
+                else
+                {
+                    tablaResult = esAdmin
+                        ? FiltroConsulta.ConsultaAdminPorFechas(TimeFixedDesde.ToShortDateString(),
+                            TimeFixedHasta.ToShortDateString(), connection)
+                        : FiltroConsulta.ConsultaClienteEntreFechas(TimeFixedDesde.ToShortDateString(),
+                            TimeFixedHasta.ToShortDateString(), nombreUsuario, connection);
+                }
+            }
+            var listaPayloads = new List<PayloadCliente>(tablaResult.Rows.Count);
+            try
+            {
+                foreach (DataRow row in tablaResult.Rows)
+                {
+                    var dtoRespuestaCliente = new PayloadCliente();
+                    var idPayload = int.Parse(row["SECUENCIA"].ToString());
+                    dtoRespuestaCliente = CreaObjetos.CrearObjetoCliente(row);
+
+
+                    var commandObtenerEF = new SqlCommand("ObtenerExtraSegunId")
+                    {
+                        CommandType = CommandType.StoredProcedure,
+                        Connection = connection,
+                        Parameters =
+                        {
+                            new SqlParameter{
+                                ParameterName = "@id",
+                                SqlDbType = SqlDbType.Int,
+                                Direction = ParameterDirection.Input,
+                                Value = idPayload
+                            }
+                        }
+                    };
+                    var dataAdapterEF = new SqlDataAdapter(commandObtenerEF);
+                    var tablaEF = new DataTable();
+                    dataAdapterEF.Fill(tablaEF);
+                    var extraHelperClient = new ExtraFieldHelper
+                    {
+                        sep360_nintento = tablaEF.Rows[0]["NINTENTO"].ToString() ?? string.Empty,
+                        sep360_nombrerecibe = tablaEF.Rows[0]["NOMBRERECIBE"].ToString() ?? string.Empty,
+                        sep360_nintentof = tablaEF.Rows[0]["INTENTOF"].ToString() ?? string.Empty,
+                        sep360_rutrecibe = tablaEF.Rows[0]["RUTRECIBE"].ToString() ?? string.Empty,
+                    };
+                    dtoRespuestaCliente.QuienRecibeNombre = extraHelperClient.sep360_nombrerecibe;
+                    dtoRespuestaCliente.QuienRecibeRut = extraHelperClient.sep360_rutrecibe;
+                    dtoRespuestaCliente.Intentos = extraHelperClient.sep360_nintento;
+                    dtoRespuestaCliente.FechaIntentos = extraHelperClient.sep360_nintentof;
+
+                    listaPayloads.Add(dtoRespuestaCliente);
+                }
+
+                return (listaPayloads.Count > 0)
+                    ? Ok(listaPayloads)
+                    : NotFound("No existe data para los filtros ingresados");
+            }
+            catch (Exception error)
+            {
+                Log.Error(error, error.Message);
+                throw;
+            }
+        }
+
+        [HttpPost("Pickup/Masivo")]
+        public async Task<ActionResult<List<PayloadDto>>> ObtenerPayloadPickup([FromBody]MasivaDto request)
+        {
+            if (string.IsNullOrEmpty(request.Usuario)) return BadRequest("El usuario no puede ir en vacio.");
+            
+            await using var connection = new SqlConnection(_config.GetConnectionString("conexion"));
+            var nombreUsuario = string.Empty;
+            var esAdmin = false;
+            var resultValidacion = FiltroConsulta.ValidaTipoUsuario(connection, request.Usuario);
+            nombreUsuario = resultValidacion.Item1;
+            esAdmin = resultValidacion.Item2;
+            DataTable tablaResult = new();
+            if (!string.IsNullOrEmpty(request.Id))
+            {
+                if (!string.IsNullOrEmpty(request.FechaDesde) || !string.IsNullOrEmpty(request.FechaHasta) || !string.IsNullOrEmpty(request.Referencia))
+                    return BadRequest("NO PUEDES CONSULTAR POR FECHAS SI BUSCAS POR ID");
+                tablaResult = esAdmin
+                    ? FiltroConsulta.ConsultaAdminPorId(request.Id, connection)
+                    : FiltroConsulta.ConsultaClientePorId(request.Id, nombreUsuario, connection);
+            }
+            else if(!string.IsNullOrEmpty(request.FechaDesde) && !string.IsNullOrEmpty(request.FechaHasta))
+            {
+                if (!DateTime.TryParse(request.FechaDesde, out var TimeFixedDesde) || !DateTime.TryParse(request.FechaHasta, out var TimeFixedHasta))
+                    return BadRequest("El formato de la fecha no es compatible");
+                if (DateTime.Compare(TimeFixedHasta, TimeFixedDesde) < 0)
+                    return BadRequest("Los rangos de fecha están cambiados. Limite 'hasta' es menor a la fecha 'desde'");
+                if (DateTime.Compare(TimeFixedDesde.AddDays(30), TimeFixedHasta) <= 0)
+                    return BadRequest("Las fechas no pueden llevar por más de 30 días");
+                
+                if (!string.IsNullOrEmpty(request.Referencia))
+                {
+                    //preguntar por referencia y fechas
+                    tablaResult = esAdmin
+                        ? FiltroConsulta.ConsultaAdminFechasReferencia(TimeFixedDesde.ToShortDateString(),
+                            TimeFixedHasta.ToShortDateString(), request.Referencia, connection)
+                        : FiltroConsulta.ConsultaClienteFechasReferencia(TimeFixedDesde.ToShortDateString(),
+                            TimeFixedHasta.ToShortDateString(), request.Referencia,nombreUsuario, connection);
+                }
+                else
+                {
+                    tablaResult = esAdmin
+                        ? FiltroConsulta.ConsultaAdminPorFechas(TimeFixedDesde.ToShortDateString(),
+                            TimeFixedHasta.ToShortDateString(), connection)
+                        : FiltroConsulta.ConsultaClienteEntreFechas(TimeFixedDesde.ToShortDateString(),
+                            TimeFixedHasta.ToShortDateString(), nombreUsuario, connection);
+                }
+            }
+            
+            var listaPayloads = new List<PayloadDto>(tablaResult.Rows.Count);
+            try
+            {
+                foreach (DataRow row in tablaResult.Rows)
+                {
+                    var dtoRespuesta = new PayloadDto();
+                    var idPayload = int.Parse(row["SECUENCIA"].ToString());
+                    dtoRespuesta = CreaObjetos.CreaObjetoAdmin(row);
+
+                    #region Cargar TAGS
+
+                    var commandObtenerTags = new SqlCommand("ObtenerTagsSegunId")
+                    {
+                        CommandType = CommandType.StoredProcedure,
+                        Connection = connection,
+                        Parameters =
+                        {
+                            new SqlParameter
+                            {
+                                ParameterName = "@id",
+                                SqlDbType = SqlDbType.Int,
+                                Direction = ParameterDirection.Input,
+                                Value = idPayload
+                            }
+                        }
+                    };
+
+                    var dataAdapterTags = new SqlDataAdapter(commandObtenerTags);
+                    var tablaTags = new DataTable();
+                    dataAdapterTags.Fill(tablaTags);
+                    dtoRespuesta.tags = new string[tablaTags.Rows.Count];
+                    var iteradorTags = 0;
+                    foreach (DataRow tags in tablaTags.Rows)
+                    {
+                        dtoRespuesta.tags[iteradorTags] = tags["NAMETAG"].ToString();
+                        iteradorTags++;
+                    }
+
+                    #endregion
+
+                    #region Cargar Pictures
+
+                    var commandObtenerPictures = new SqlCommand("ObtenerPicturesSegunId")
+                    {
+                        CommandType = CommandType.StoredProcedure,
+                        Connection = connection,
+                        Parameters =
+                        {
+                            new SqlParameter
+                            {
+                                ParameterName = "@id",
+                                SqlDbType = SqlDbType.Int,
+                                Direction = ParameterDirection.Input,
+                                Value = idPayload
+                            }
+                        }
+                    };
+                    var dataAdapterPictures = new SqlDataAdapter(commandObtenerPictures);
+                    var tablaPictures = new DataTable();
+                    dataAdapterPictures.Fill(tablaPictures);
+                    dtoRespuesta.pictures = new string[tablaPictures.Rows.Count];
+                    var iteradorPictures = 0;
+                    foreach (DataRow pictures in tablaPictures.Rows)
+                    {
+                        dtoRespuesta.pictures[iteradorPictures] = pictures["URLPICTURE"].ToString();
+                        iteradorPictures++;
+                    }
+
+                    #endregion
+
+                    #region Cargar SkillsRequired
+
+                    var commandObtenerSR = new SqlCommand("ObtenerSkillsRequiredSegunId")
+                    {
+                        CommandType = CommandType.StoredProcedure,
+                        Connection = connection,
+                        Parameters =
+                        {
+                            new SqlParameter
+                            {
+                                ParameterName = "@id",
+                                SqlDbType = SqlDbType.Int,
+                                Direction = ParameterDirection.Input,
+                                Value = idPayload
+                            }
+                        }
+                    };
+                    var dataAdapterSR = new SqlDataAdapter(commandObtenerSR);
+                    var tablaSR = new DataTable();
+                    dataAdapterSR.Fill(tablaSR);
+                    dtoRespuesta.skills_required = new int[tablaSR.Rows.Count];
+                    var iteradorSR = 0;
+                    foreach (DataRow skillsRequired in tablaSR.Rows)
+                    {
+                        dtoRespuesta.skills_required[iteradorSR] = int.Parse(skillsRequired["NAMESR"].ToString());
+                        iteradorSR++;
+                    }
+
+                    #endregion
+
+                    #region Cargar SkillsOptionals
+
+                    var commandObtenerSO = new SqlCommand("ObtenerSkillsOptionalsSegunId")
+                    {
+                        CommandType = CommandType.StoredProcedure,
+                        Connection = connection,
+                        Parameters =
+                        {
+                            new SqlParameter
+                            {
+                                ParameterName = "@id",
+                                SqlDbType = SqlDbType.Int,
+                                Direction = ParameterDirection.Input,
+                                Value = idPayload
+                            }
+                        }
+                    };
+                    var dataAdapterSO = new SqlDataAdapter(commandObtenerSO);
+                    var tablaSO = new DataTable();
+                    dataAdapterSO.Fill(tablaSO);
+                    dtoRespuesta.skills_optional = new int[tablaSR.Rows.Count];
+                    var iteradorSO = 0;
+                    foreach (DataRow skillsOptional in tablaSO.Rows)
+                    {
+                        dtoRespuesta.skills_optional[iteradorSO] = int.Parse(skillsOptional["NAMESO"].ToString());
+                        iteradorSO++;
+                    }
+
+                    #endregion
+
+                    #region Cargar Utility Extra fields
+
+                    var commandObtenerEF = new SqlCommand("ObtenerExtraSegunId")
+                    {
+                        CommandType = CommandType.StoredProcedure,
+                        Connection = connection,
+                        Parameters =
+                        {
+                            new SqlParameter
+                            {
+                                ParameterName = "@id",
+                                SqlDbType = SqlDbType.Int,
+                                Direction = ParameterDirection.Input,
+                                Value = idPayload
+                            }
+                        }
+                    };
+                    var dataAdapterEF = new SqlDataAdapter(commandObtenerEF);
+                    var tablaEF = new DataTable();
+                    dataAdapterEF.Fill(tablaEF);
+                    var extraHelperClient = new ExtraFieldHelper();
+                    if (tablaEF.Rows.Count > 0)
+                    {
+                        extraHelperClient.sep360_nintento = tablaEF.Rows[0]["NINTENTO"].ToString() ?? string.Empty;
+                        extraHelperClient.sep360_nombrerecibe = tablaEF.Rows[0]["NOMBRERECIBE"].ToString() ?? string.Empty;
+                        extraHelperClient.sep360_nintentof = tablaEF.Rows[0]["INTENTOF"].ToString() ?? string.Empty;
+                        extraHelperClient.sep360_rutrecibe = tablaEF.Rows[0]["RUTRECIBE"].ToString() ?? string.Empty;
+                    }
+                    #endregion
+
+                    dtoRespuesta.extra_field_values = extraHelperClient;
+                    listaPayloads.Add(dtoRespuesta);
+                }
+
+                return (listaPayloads.Count > 0)
+                    ? Ok(listaPayloads)
+                    : NotFound("No existe data para los filtros ingresados");
+            }
+            catch (Exception error)
+            {
+                Log.Error(error,error.Message);
+                throw;
+            }
+
+        }
+
     }
 }
