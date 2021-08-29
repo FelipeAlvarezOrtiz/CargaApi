@@ -1779,7 +1779,7 @@ namespace CargaBd.API.Controllers
             catch (Exception exception)
             {
                 Log.Error(exception, $"HA OCURRIDO UN ERROR AL CONSULTAR POR REFERENCIA Y FECHA");
-                return Problem(exception.Message);
+                throw;
             }
             finally
             {
@@ -1861,18 +1861,20 @@ namespace CargaBd.API.Controllers
                     var dataAdapterEF = new SqlDataAdapter(commandObtenerEF);
                     var tablaEF = new DataTable();
                     dataAdapterEF.Fill(tablaEF);
-                    var extraHelperClient = new ExtraFieldHelper
+                    if (tablaEF.Rows.Count > 0)
                     {
-                        sep360_nintento = tablaEF.Rows[0]["NINTENTO"].ToString() ?? string.Empty,
-                        sep360_nombrerecibe = tablaEF.Rows[0]["NOMBRERECIBE"].ToString() ?? string.Empty,
-                        sep360_nintentof = tablaEF.Rows[0]["INTENTOF"].ToString() ?? string.Empty,
-                        sep360_rutrecibe = tablaEF.Rows[0]["RUTRECIBE"].ToString() ?? string.Empty,
-                    };
-                    dtoRespuestaCliente.QuienRecibeNombre = extraHelperClient.sep360_nombrerecibe;
-                    dtoRespuestaCliente.QuienRecibeRut = extraHelperClient.sep360_rutrecibe;
-                    dtoRespuestaCliente.Intentos = extraHelperClient.sep360_nintento;
-                    dtoRespuestaCliente.FechaIntentos = extraHelperClient.sep360_nintentof;
-
+                        var extraHelperClient = new ExtraFieldHelper
+                        {
+                            sep360_nintento = tablaEF.Rows[0]["NINTENTO"].ToString() ?? string.Empty,
+                            sep360_nombrerecibe = tablaEF.Rows[0]["NOMBRERECIBE"].ToString() ?? string.Empty,
+                            sep360_nintentof = tablaEF.Rows[0]["INTENTOF"].ToString() ?? string.Empty,
+                            sep360_rutrecibe = tablaEF.Rows[0]["RUTRECIBE"].ToString() ?? string.Empty,
+                        };
+                        dtoRespuestaCliente.QuienRecibeNombre = extraHelperClient.sep360_nombrerecibe;
+                        dtoRespuestaCliente.QuienRecibeRut = extraHelperClient.sep360_rutrecibe;
+                        dtoRespuestaCliente.Intentos = extraHelperClient.sep360_nintento;
+                        dtoRespuestaCliente.FechaIntentos = extraHelperClient.sep360_nintentof;
+                    }
                     listaPayloads.Add(dtoRespuestaCliente);
                 }
 

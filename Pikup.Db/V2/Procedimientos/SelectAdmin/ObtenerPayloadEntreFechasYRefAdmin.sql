@@ -10,5 +10,5 @@ CREATE PROCEDURE ObtenerPayloadEntreFechasYRefAdmin
 AS
 BEGIN
 	SET NOCOUNT ON;
-	SELECT * FROM PAYLOAD WHERE PAYLOAD.PLANNED_DATE between @fechaDesde and @fechaHasta or REFERENCE = @referencia;
+	SELECT * FROM PAYLOAD WHERE PAYLOAD.PLANNED_DATE between @fechaDesde and @fechaHasta and REFERENCE = @referencia;
 END
