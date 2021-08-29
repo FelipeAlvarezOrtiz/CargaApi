@@ -38,7 +38,6 @@ namespace CargaBd.API.Logica
             };
             try
             {
-                connection.Open();
                 commandObtenerUsuario.CommandTimeout = 120000;
                 var dataAdapterUser = new SqlDataAdapter(commandObtenerUsuario);
                 dataAdapterUser.Fill(tablaResultUsuario);
@@ -78,7 +77,6 @@ namespace CargaBd.API.Logica
             };
             try
             {
-                connection.Open();
                 commandObtenerUsuario.CommandTimeout = 120000;
                 var dataAdapterUser = new SqlDataAdapter(commandObtenerUsuario);
                 dataAdapterUser.Fill(tablaResultUsuario);
@@ -112,7 +110,6 @@ namespace CargaBd.API.Logica
             };
             try
             {
-                connection.Open();
                 commandObtenerUsuario.CommandTimeout = 120000;
                 var dataAdapterUser = new SqlDataAdapter(commandObtenerUsuario);
                 dataAdapterUser.Fill(tablaResultUsuario);
@@ -164,7 +161,6 @@ namespace CargaBd.API.Logica
             };
             try
             {
-                connection.Open();
                 commandObtenerUsuario.CommandTimeout = 120000;
                 var dataAdapterUser = new SqlDataAdapter(commandObtenerUsuario);
                 dataAdapterUser.Fill(tablaResultUsuario);
@@ -204,7 +200,6 @@ namespace CargaBd.API.Logica
             };
             try
             {
-                connection.Open();
                 commandObtenerUsuario.CommandTimeout = 120000;
                 var dataAdapterUser = new SqlDataAdapter(commandObtenerUsuario);
                 dataAdapterUser.Fill(tablaResultUsuario);
@@ -222,7 +217,7 @@ namespace CargaBd.API.Logica
         public static DataTable ConsultaClienteEntreFechas(string fechaDesde, string fechaHasta,string usuario, SqlConnection connection)
         {
             var tablaResultUsuario = new DataTable();
-            var commandObtenerUsuario = new SqlCommand("ObtenerPayloadSegunTrack")
+            var commandObtenerUsuario = new SqlCommand("ObtenerPayloadEntreFechas")
             {
                 CommandType = CommandType.StoredProcedure,
                 Connection = connection,
@@ -250,7 +245,6 @@ namespace CargaBd.API.Logica
             };
             try
             {
-                connection.Open();
                 commandObtenerUsuario.CommandTimeout = 120000;
                 var dataAdapterUser = new SqlDataAdapter(commandObtenerUsuario);
                 dataAdapterUser.Fill(tablaResultUsuario);

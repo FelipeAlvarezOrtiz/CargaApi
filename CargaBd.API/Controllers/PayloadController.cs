@@ -1844,7 +1844,6 @@ namespace CargaBd.API.Controllers
                     var idPayload = int.Parse(row["SECUENCIA"].ToString());
                     dtoRespuestaCliente = CreaObjetos.CrearObjetoCliente(row);
 
-
                     var commandObtenerEF = new SqlCommand("ObtenerExtraSegunId")
                     {
                         CommandType = CommandType.StoredProcedure,
@@ -1886,13 +1885,19 @@ namespace CargaBd.API.Controllers
                 Log.Error(error, error.Message);
                 throw;
             }
+            finally
+            {
+                if (connection.State == ConnectionState.Open)
+                {
+                    connection.Close();
+                }
+            }
         }
 
         [HttpPost("Pickup/Masivo")]
         public async Task<ActionResult<List<PayloadDto>>> ObtenerPayloadPickup([FromBody]MasivaDto request)
         {
             if (string.IsNullOrEmpty(request.Usuario)) return BadRequest("El usuario no puede ir en vacio.");
-            
             await using var connection = new SqlConnection(_config.GetConnectionString("conexion"));
             var nombreUsuario = string.Empty;
             var esAdmin = false;
@@ -2090,10 +2095,12 @@ namespace CargaBd.API.Controllers
                     if (tablaEF.Rows.Count > 0)
                     {
                         extraHelperClient.sep360_nintento = tablaEF.Rows[0]["NINTENTO"].ToString() ?? string.Empty;
-                        extraHelperClient.sep360_nombrerecibe = tablaEF.Rows[0]["NOMBRERECIBE"].ToString() ?? string.Empty;
+                        extraHelperClient.sep360_nombrerecibe =
+                            tablaEF.Rows[0]["NOMBRERECIBE"].ToString() ?? string.Empty;
                         extraHelperClient.sep360_nintentof = tablaEF.Rows[0]["INTENTOF"].ToString() ?? string.Empty;
                         extraHelperClient.sep360_rutrecibe = tablaEF.Rows[0]["RUTRECIBE"].ToString() ?? string.Empty;
                     }
+
                     #endregion
 
                     dtoRespuesta.extra_field_values = extraHelperClient;
@@ -2106,8 +2113,15 @@ namespace CargaBd.API.Controllers
             }
             catch (Exception error)
             {
-                Log.Error(error,error.Message);
+                Log.Error(error, error.Message);
                 throw;
+            }
+            finally
+            {
+                if (connection.State == ConnectionState.Open)
+                {
+                    connection.Close();
+                }
             }
 
         }
