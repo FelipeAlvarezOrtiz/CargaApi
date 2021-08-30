@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.31515.178
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CargaBd.API", "CargaBd.API\CargaBd.API.csproj", "{1A0E5DC1-7D41-495A-B9E4-DF8343D8B59D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CargaBd.API", "CargaBd.API\CargaBd.API.csproj", "{1A0E5DC1-7D41-495A-B9E4-DF8343D8B59D}"
+EndProject
+Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "Pikup.Db", "Pikup.Db\Pikup.Db.sqlproj", "{40F3FD3E-60D6-4E5B-B7C8-FD512451104A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,12 @@ Global
 		{1A0E5DC1-7D41-495A-B9E4-DF8343D8B59D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1A0E5DC1-7D41-495A-B9E4-DF8343D8B59D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1A0E5DC1-7D41-495A-B9E4-DF8343D8B59D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{40F3FD3E-60D6-4E5B-B7C8-FD512451104A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{40F3FD3E-60D6-4E5B-B7C8-FD512451104A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{40F3FD3E-60D6-4E5B-B7C8-FD512451104A}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{40F3FD3E-60D6-4E5B-B7C8-FD512451104A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{40F3FD3E-60D6-4E5B-B7C8-FD512451104A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{40F3FD3E-60D6-4E5B-B7C8-FD512451104A}.Release|Any CPU.Deploy.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
