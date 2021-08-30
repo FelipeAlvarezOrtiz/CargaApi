@@ -1,8 +1,11 @@
-﻿namespace CargaBd.API.Models
+﻿using System.Security;
+
+namespace CargaBd.API.Models
 {
     public class FechaDto
     {
         public string FechaFin { get; set; }
+        public string Usuario { get; set; }
     }
 
     public class NumeroOrdenDto
