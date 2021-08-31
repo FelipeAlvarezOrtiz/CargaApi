@@ -152,8 +152,9 @@ namespace CargaBd.API.Logica
                 //        break;
                 //}
                 var intentos = string.Empty;
-                var fechaIntentos = string.Empty;
-                var etaIntentos = string.Empty;
+                //var fechaIntentos = string.Empty;
+                var fechaIntentos = row["CHECKOUT_TIME"].ToString();
+                var etaIntentos = row["STATUS"].ToString();
                 //var arrayNotes = row["NOTES"].ToString()?.Split("/");
                 //switch (arrayNotes.Length)
                 //{
@@ -189,7 +190,7 @@ namespace CargaBd.API.Logica
                     QuienRecibeRut = quienRecibeRut,
                     Intentos = intentos,
                     FechaIntentos = fechaIntentos,
-                    EtaIntentos = etaIntentos
+                    EstaIntentos = etaIntentos
                 };
             }
             catch (Exception exception)

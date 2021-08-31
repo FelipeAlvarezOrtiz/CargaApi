@@ -835,7 +835,7 @@ namespace CargaBd.API.Controllers
                         dtoRespuestaCliente.QuienRecibeNombre = extraHelperClient.sep360_nombrerecibe;
                         dtoRespuestaCliente.QuienRecibeRut = extraHelperClient.sep360_rutrecibe;
                         dtoRespuestaCliente.Intentos = extraHelperClient.sep360_nintento;
-                        dtoRespuestaCliente.FechaIntentos = extraHelperClient.sep360_nintentof;
+                        //dtoRespuestaCliente.FechaIntentos = extraHelperClient.sep360_nintentof;
                     }
                     listaPayloads.Add(dtoRespuestaCliente);
                 }

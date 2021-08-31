@@ -15,6 +15,6 @@
         public string QuienRecibeRut { get; set; }
         public string Intentos { get; set; }
         public string FechaIntentos { get; set; }
-        public string EtaIntentos { get; set; }
+        public string EstaIntentos { get; set; }
     }
 }
