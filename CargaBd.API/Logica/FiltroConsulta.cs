@@ -9,6 +9,8 @@ namespace CargaBd.API.Logica
     {
         public static DataTable ConsultaAdminFechasReferencia(string fechaDesde,string fechaHasta,string referencia, SqlConnection connection)
         {
+            var fechaDesdeFix = DateTime.Parse(fechaDesde).ToString("yyyy-MM-dd");
+            var fechaHastaFix = DateTime.Parse(fechaHasta).ToString("yyyy-MM-dd");
             var tablaResultUsuario = new DataTable();
             var commandObtenerUsuario = new SqlCommand("ObtenerPayloadEntreFechasYRefAdmin")
             {
@@ -20,13 +22,13 @@ namespace CargaBd.API.Logica
                         ParameterName = "@fechaDesde",
                         SqlDbType = SqlDbType.NVarChar,
                         Direction = ParameterDirection.Input,
-                        Value = fechaDesde
+                        Value = fechaDesdeFix
                     },
                     new SqlParameter{
                         ParameterName = "@fechaHasta",
                         SqlDbType = SqlDbType.NVarChar,
                         Direction = ParameterDirection.Input,
-                        Value = fechaHasta
+                        Value = fechaHastaFix
                     },
                     new SqlParameter{
                         ParameterName = "@referencia",
@@ -54,6 +56,8 @@ namespace CargaBd.API.Logica
 
         public static DataTable ConsultaAdminPorFechas(string fechaDesde, string fechaHasta, SqlConnection connection)
         {
+            var fechaDesdeFix = DateTime.Parse(fechaDesde).ToString("yyyy-MM-dd");
+            var fechaHastaFix = DateTime.Parse(fechaHasta).ToString("yyyy-MM-dd");
             var tablaResultUsuario = new DataTable();
             var commandObtenerUsuario = new SqlCommand("ObtenerPayloadEntreFechasAdmin")
             {
@@ -65,13 +69,13 @@ namespace CargaBd.API.Logica
                         ParameterName = "@fechaDesde",
                         SqlDbType = SqlDbType.NVarChar,
                         Direction = ParameterDirection.Input,
-                        Value = fechaDesde
+                        Value = fechaDesdeFix
                     },
                     new SqlParameter{
                         ParameterName = "@fechaHasta",
                         SqlDbType = SqlDbType.NVarChar,
                         Direction = ParameterDirection.Input,
-                        Value = fechaHasta
+                        Value = fechaHastaFix
                     }
                 }
             };
@@ -93,6 +97,7 @@ namespace CargaBd.API.Logica
 
         public static DataTable ConsultaAdminPorId(string id, SqlConnection connection)
         {
+
             var tablaResultUsuario = new DataTable();
             var commandObtenerUsuario = new SqlCommand("ObtenerPayloadSegunTrackAdmin")
             {
@@ -126,6 +131,8 @@ namespace CargaBd.API.Logica
 
         public static DataTable ConsultaClienteFechasReferencia(string fechaDesde, string fechaHasta, string referencia,string usuario, SqlConnection connection)
         {
+            var fechaDesdeFix = DateTime.Parse(fechaDesde).ToString("yyyy-MM-dd");
+            var fechaHastaFix = DateTime.Parse(fechaHasta).ToString("yyyy-MM-dd");
             var tablaResultUsuario = new DataTable();
             var commandObtenerUsuario = new SqlCommand("ObtenerPayloadEntreFechasYReferencia")
             {
@@ -137,13 +144,13 @@ namespace CargaBd.API.Logica
                         ParameterName = "@fechaDesde",
                         SqlDbType = SqlDbType.NVarChar,
                         Direction = ParameterDirection.Input,
-                        Value = fechaDesde
+                        Value = fechaDesdeFix
                     },
                     new SqlParameter{
                         ParameterName = "@fechaHasta",
                         SqlDbType = SqlDbType.NVarChar,
                         Direction = ParameterDirection.Input,
-                        Value = fechaHasta
+                        Value = fechaHastaFix
                     },
                     new SqlParameter{
                         ParameterName = "@referencia",
@@ -216,6 +223,8 @@ namespace CargaBd.API.Logica
 
         public static DataTable ConsultaClienteEntreFechas(string fechaDesde, string fechaHasta,string usuario, SqlConnection connection)
         {
+            var fechaDesdeFix = DateTime.Parse(fechaDesde).ToString("yyyy-MM-dd");
+            var fechaHastaFix = DateTime.Parse(fechaHasta).ToString("yyyy-MM-dd");
             var tablaResultUsuario = new DataTable();
             var commandObtenerUsuario = new SqlCommand("ObtenerPayloadEntreFechas")
             {
@@ -227,13 +236,13 @@ namespace CargaBd.API.Logica
                         ParameterName = "@fechaDesde",
                         SqlDbType = SqlDbType.NVarChar,
                         Direction = ParameterDirection.Input,
-                        Value = fechaDesde
+                        Value = fechaDesdeFix
                     },
                     new SqlParameter{
                         ParameterName = "@fechaHasta",
                         SqlDbType = SqlDbType.NVarChar,
                         Direction = ParameterDirection.Input,
-                        Value = fechaHasta
+                        Value = fechaHastaFix
                     },
                     new SqlParameter{
                         ParameterName = "@usuario",
