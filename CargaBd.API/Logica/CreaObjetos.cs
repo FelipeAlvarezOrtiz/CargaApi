@@ -130,7 +130,7 @@ namespace CargaBd.API.Logica
                 var destino = row["ADDRESS"].ToString();
                 var fechaRecepcion = row["CHECKOUT_TIME"].ToString();
                 var estadoEnvio = row["STATUS"].ToString();
-                var fechaEnvio = row["PLANNED_DATE"].ToString();
+                var fechaEnvio = row["PLANNED_DATE"].ToString() +" "+row["estimated_time_departure"].ToString();
                 var fechaEntrega = row["CHECKOUT_TIME"].ToString();
                 var observacion = row["CHECKOUT_COMMENT"].ToString();
                 var seguimiento = row["ID"].ToString();
@@ -190,7 +190,7 @@ namespace CargaBd.API.Logica
                     QuienRecibeRut = quienRecibeRut,
                     Intentos = intentos,
                     FechaIntentos = fechaIntentos,
-                    EstaIntentos = etaIntentos
+                    EstadoIntentos = etaIntentos
                 };
             }
             catch (Exception exception)
