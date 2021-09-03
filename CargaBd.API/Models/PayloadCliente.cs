@@ -16,5 +16,8 @@
         public string Intentos { get; set; }
         public string FechaIntentos { get; set; }
         public string EstadoIntentos { get; set; }
+        public string PesoPaquete { get; set; }
+        public string Precio { get; set; }
+        public string TipoCobro { get; set; }
     }
 }

@@ -859,7 +859,7 @@ namespace CargaBd.API.Controllers
         }
 
         [HttpPost("Pickup/Masivo")]
-        public async Task<ActionResult<List<PayloadDto>>> ObtenerPayloadPickup([FromBody] MasivaDto request)
+        public async Task<ActionResult<List<PayloadRespuesta>>> ObtenerPayloadPickup([FromBody] MasivaDto request)
         {
             if (string.IsNullOrEmpty(request.Usuario))
             {
@@ -910,12 +910,12 @@ namespace CargaBd.API.Controllers
                 }
             }
 
-            var listaPayloads = new List<PayloadDto>(tablaResult.Rows.Count);
+            var listaPayloads = new List<PayloadRespuesta>(tablaResult.Rows.Count);
             try
             {
                 foreach (DataRow row in tablaResult.Rows)
                 {
-                    var dtoRespuesta = new PayloadDto();
+                    var dtoRespuesta = new PayloadRespuesta();
                     var idPayload = int.Parse(row["SECUENCIA"].ToString());
                     dtoRespuesta = CreaObjetos.CreaObjetoAdmin(row);
 
@@ -1150,12 +1150,12 @@ namespace CargaBd.API.Controllers
                 }
             }
 
-            var listaPayloads = new List<PayloadDto>(tablaResult.Rows.Count);
+            var listaPayloads = new List<PayloadRespuesta>(tablaResult.Rows.Count);
             try
             {
                 foreach (DataRow row in tablaResult.Rows)
                 {
-                    var dtoRespuesta = new PayloadDto();
+                    var dtoRespuesta = new PayloadRespuesta();
                     var idPayload = int.Parse(row["SECUENCIA"].ToString());
                     dtoRespuesta = CreaObjetos.CreaObjetoAdmin(row);
 
