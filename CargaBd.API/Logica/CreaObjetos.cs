@@ -127,6 +127,9 @@ namespace CargaBd.API.Logica
                 //        etaIntentos = arrayNotes[3];
                 //        break;
                 //}
+                var pesoPaquete = row["PESO_PAQUETE"].ToString();
+                var precio = row["PRECIO"].ToString();
+                var tipoCobro = row["TIPO_COBRO"].ToString();
                 return new PayloadCliente()
                 {
                     Folio = folio,
@@ -142,7 +145,10 @@ namespace CargaBd.API.Logica
                     QuienRecibeRut = quienRecibeRut,
                     Intentos = intentos,
                     FechaIntentos = fechaIntentos,
-                    EstadoIntentos = etaIntentos
+                    EstadoIntentos = etaIntentos,
+                    PesoPaquete = pesoPaquete,
+                    Precio = precio,
+                    TipoCobro = tipoCobro
                 };
             }
             catch (Exception exception)

@@ -1096,7 +1096,7 @@ namespace CargaBd.API.Controllers
         }
 
         [HttpPost("Pickup/MasivoExportCsv")]
-        public async Task<ActionResult<List<PayloadDto>>> MasivoExportCsv([FromBody] MasivaDto request)
+        public async Task<ActionResult<List<PayloadRespuesta>>> MasivoExportCsv([FromBody] MasivaDto request)
         {
             if (string.IsNullOrEmpty(request.Usuario))
             {
