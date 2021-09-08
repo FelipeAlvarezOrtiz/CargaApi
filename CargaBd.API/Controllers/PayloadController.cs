@@ -744,8 +744,7 @@ namespace CargaBd.API.Controllers
             //fin while
             return errores == 0 ? Ok() : Ok("Se ha completado exitosamente, pero han ocurrido errores. Verificar log");
         }
-
-
+        
         [HttpPost("Celmedia/Masivo")]
         public async Task<ActionResult<List<PayloadCliente>>> ObtenerPayloadCelmedia([FromBody] MasivaDto request)
         {
@@ -1350,5 +1349,24 @@ namespace CargaBd.API.Controllers
 
         }
 
+        [HttpPost("InsertaDatos")]
+        public async Task<ActionResult<Respuesta>> InsertaDatos(PeticionDto request){
+            if (string.IsNullOrEmpty(request.usuario))
+            {
+                return BadRequest(new Respuesta()
+                {
+                    CodigoRespuesta = 404,
+                    MensajeUsuario = "Se debe especificar un usuario",
+                    ResponseBody = "error"
+                });
+            }
+            await using var connection = new SqlConnection(_config.GetConnectionString("conexion"));
+            var nombreUsuario = string.Empty;
+            var esAdmin = false;
+            var resultValidacion = FiltroConsulta.ValidaTipoUsuario(connection, request.usuario);
+            nombreUsuario = resultValidacion.Item1;
+            request.usuario = nombreUsuario;
+            return InsertaTablas.InsertarPayloadTrack(connection,request);
+        }
     }
 }
