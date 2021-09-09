@@ -1349,7 +1349,7 @@ namespace CargaBd.API.Controllers
 
         }
 
-        [HttpPost("InsertaDatos")]
+        [HttpPost("CourrierCliente")]
         public async Task<ActionResult<Respuesta>> InsertaDatos(PeticionDto request){
             if (string.IsNullOrEmpty(request.usuario))
             {
