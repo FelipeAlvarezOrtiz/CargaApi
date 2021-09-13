@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using CargaBd.API.Models;
 using Microsoft.Data.SqlClient;
@@ -113,6 +114,74 @@ namespace CargaBd.API.Logica
                 };
             }
             catch(Exception exception)
+            {
+                throw;
+            }
+        }
+
+        public static List<int> ObtenerIdsDeFiltro(SqlConnection connection, string fechaDesde, string fechaHasta)
+        {
+            try
+            {
+                var commandInsertarPayloadTrack = new SqlCommand("ObtenerPayloadEntreFechasYRefAdmin")
+                {
+                    CommandType = CommandType.StoredProcedure,
+                    Connection = connection,
+                    Parameters =
+                    {
+                        new SqlParameter
+                        {
+                            ParameterName = "@adress",
+                            SqlDbType = SqlDbType.NVarChar,
+                            Direction = ParameterDirection.Input,
+                            Value = fechaDesde
+                        },
+                        new SqlParameter
+                        {
+                            ParameterName = "@trackingId",
+                            SqlDbType = SqlDbType.NVarChar,
+                            Direction = ParameterDirection.Input,
+                            Value = fechaHasta
+                        }
+                    }
+                };
+                connection.Open();
+                commandInsertarPayloadTrack.CommandTimeout = 120000;
+                commandInsertarPayloadTrack.ExecuteNonQuery();
+                
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            return new List<int>();
+        }
+
+        public static PayloadCliente ObtenerPayloadFiltro(SqlConnection connection, int idPayload)
+        {
+            try
+            {
+                if(connection.State == ConnectionState.Closed)
+                    connection.Open();
+                var commandQuery = new SqlCommand()
+                {
+                    Connection = connection,
+                    CommandType = CommandType.StoredProcedure,
+                    CommandTimeout = 10000,
+                    Parameters =
+                    {
+                        new SqlParameter()
+                        {
+                            Direction = ParameterDirection.Input,
+                            DbType = DbType.Int32,
+                            ParameterName = "@idPayload"
+                        }
+                    }
+                };
+                return null;
+            }
+            catch (Exception)
             {
                 throw;
             }
