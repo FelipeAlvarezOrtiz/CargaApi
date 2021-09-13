@@ -54,7 +54,7 @@ namespace CargaBd.API.Logica
                     signature = row["SIGNATURE"].ToString(),
                     route_estimated_time_start = row["ROUTE_ESTIMATED_TIME_START"].ToString(),
                     route = row["ROUTE"].ToString(),
-                    reference = row["REFERENCE"].ToString(),
+                    reference = row["REFERENCE"].ToString().Replace("( prioridad )",string.Empty).Replace("(prioridad)",string.Empty),
                     vehicle = int.Parse(row["VEHICLE"].ToString()),
                     driver = int.TryParse(row["ORDER"].ToString(), out var driverParsed) ? driverParsed : null,
                     priority_level = int.TryParse(row["ORDER"].ToString(), out var plParsed) ? plParsed : null,
@@ -77,7 +77,7 @@ namespace CargaBd.API.Logica
         {
             try
             {
-                var folio = row["REFERENCE"].ToString();
+                var folio = row["REFERENCE"].ToString().Replace("( prioridad )", string.Empty).Replace("(prioridad)", string.Empty);
                 var origen = "Santiago";
                 var destino = row["ADDRESS"].ToString();
                 var fechaRecepcion = row["CHECKOUT_TIME"].ToString();

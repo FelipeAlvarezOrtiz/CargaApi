@@ -1,7 +1,7 @@
 /*==============================================================*/
 /* Table: NUEVACARGA                                            */
 /*==============================================================*/
-create table NUEVA_CARGA (
+create table INGRESO_COURRIER_CLIENTE (
     NUMERO_ATENCION             INT                 IDENTITY(1,1),
     TRACKING_ID                 nvarchar(250)        null,
     TITLE                       nvarchar(250)        null,

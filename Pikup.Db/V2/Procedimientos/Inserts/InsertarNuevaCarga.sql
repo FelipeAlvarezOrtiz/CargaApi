@@ -1,4 +1,4 @@
-﻿CREATE PROCEDURE [dbo].[InsertarNuevaCarga]
+﻿CREATE PROCEDURE [dbo].[InsertarCourrier]
 	@tracking_id nvarchar(250),
 	@title nvarchar(250),
 	@address nvarchar(250),
@@ -19,7 +19,7 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 
-	INSERT INTO NUEVA_CARGA 
+	INSERT INTO INGRESO_COURRIER_CLIENTE 
 		VALUES(@tracking_id,@title,@address,@load,@load_2,@load_3,@contact_name,@contact_phone,
 				@contact_email,@reference,@notes,@planned_date,@lugar_retiro,@disponible_bodega,@usuario);
 

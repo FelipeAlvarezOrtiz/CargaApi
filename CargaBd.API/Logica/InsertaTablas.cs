@@ -10,7 +10,7 @@ namespace CargaBd.API.Logica
         public static Respuesta InsertarPayloadTrack(SqlConnection connection,PeticionDto request)
         {
             var idCreado = 0;
-            var commandInsertarPayloadTrack = new SqlCommand("InsertarNuevaCarga")
+            var commandInsertarPayloadTrack = new SqlCommand("InsertarCourrier")
             {
                 CommandType = CommandType.StoredProcedure,
                 Connection = connection,
