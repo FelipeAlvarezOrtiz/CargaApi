@@ -11,19 +11,19 @@ namespace CargaBd.API.Logica
         public static Respuesta InsertarPayloadTrack(SqlConnection connection,PeticionDto request)
         {
             var idCreado = 0;
-            var commandInsertarPayloadTrack = new SqlCommand("ObtenerPayloadEntreFechasYRefAdmin")
+            var commandInsertarPayloadTrack = new SqlCommand("InsertarCourrier")
             {
                 CommandType = CommandType.StoredProcedure,
                 Connection = connection,
                 Parameters =
                 {
                     new SqlParameter{
-                        ParameterName = "@adress",
+                        ParameterName = "@address",
                         SqlDbType = SqlDbType.NVarChar,
                         Direction = ParameterDirection.Input,
                         Value = request.address
                     },new SqlParameter{
-                        ParameterName = "@trackingId",
+                        ParameterName = "@tracking_id",
                         SqlDbType = SqlDbType.NVarChar,
                         Direction = ParameterDirection.Input,
                         Value = request.tracking_id
@@ -48,17 +48,17 @@ namespace CargaBd.API.Logica
                         Direction = ParameterDirection.Input,
                         Value = request.load_3
                     },new SqlParameter{
-                        ParameterName = "@contactName",
+                        ParameterName = "@contact_name",
                         SqlDbType = SqlDbType.NVarChar,
                         Direction = ParameterDirection.Input,
                         Value = request.contact_name
                     },new SqlParameter{
-                        ParameterName = "@contactEmail",
+                        ParameterName = "@contact_email",
                         SqlDbType = SqlDbType.NVarChar,
                         Direction = ParameterDirection.Input,
                         Value = request.contact_email
                     },new SqlParameter{
-                        ParameterName = "@contactPhone",
+                        ParameterName = "@contact_phone",
                         SqlDbType = SqlDbType.NVarChar,
                         Direction = ParameterDirection.Input,
                         Value = request.contact_phone
@@ -73,17 +73,17 @@ namespace CargaBd.API.Logica
                         Direction = ParameterDirection.Input,
                         Value = request.notes
                     },new SqlParameter{
-                        ParameterName = "@plannedDate",
+                        ParameterName = "@planned_date",
                         SqlDbType = SqlDbType.NVarChar,
                         Direction = ParameterDirection.Input,
                         Value = request.planned_date
                     },new SqlParameter{
-                        ParameterName = "@lugarRetiro",
+                        ParameterName = "@lugar_retiro",
                         SqlDbType = SqlDbType.NVarChar,
                         Direction = ParameterDirection.Input,
                         Value = request.lugar_retiro
                     },new SqlParameter{
-                        ParameterName = "@disponibleBodega",
+                        ParameterName = "@disponible_bodega",
                         SqlDbType = SqlDbType.NVarChar,
                         Direction = ParameterDirection.Input,
                         Value = request.disponible_bodega
@@ -102,7 +102,8 @@ namespace CargaBd.API.Logica
             };
             try
             {
-                connection.Open();
+                if (connection.State != ConnectionState.Open) 
+                    connection.Open();
                 commandInsertarPayloadTrack.CommandTimeout = 120000;
                 commandInsertarPayloadTrack.ExecuteNonQuery();
                 idCreado = (int)commandInsertarPayloadTrack.Parameters["@idInsertado"].Value;
@@ -113,7 +114,7 @@ namespace CargaBd.API.Logica
                     ResponseBody = $"Su número de atención es {idCreado}"
                 };
             }
-            catch(Exception exception)
+            catch(Exception)
             {
                 throw;
             }
