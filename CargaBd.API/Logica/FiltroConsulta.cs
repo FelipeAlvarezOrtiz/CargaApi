@@ -11,8 +11,9 @@ namespace CargaBd.API.Logica
         {
             var fechaDesdeFix = DateTime.Parse(fechaDesde).ToString("yyyy-MM-dd");
             var fechaHastaFix = DateTime.Parse(fechaHasta).ToString("yyyy-MM-dd");
-            var tablaResultUsuario = new DataTable();
-            var commandObtenerUsuario = new SqlCommand("ObtenerPayloadEntreFechasYRefAdmin")
+            var tablaResultsIds = new DataTable();
+            var tablaResultados = new DataTable();
+            var commandObtenerIds = new SqlCommand("ObtenerPayloadEntreFechasYRefAdmin")
             {
                 CommandType = CommandType.StoredProcedure,
                 Connection = connection,
@@ -40,10 +41,26 @@ namespace CargaBd.API.Logica
             };
             try
             {
-                commandObtenerUsuario.CommandTimeout = 120000;
-                var dataAdapterUser = new SqlDataAdapter(commandObtenerUsuario);
-                dataAdapterUser.Fill(tablaResultUsuario);
-                return tablaResultUsuario;
+                commandObtenerIds.CommandTimeout = 120000;
+                var dataAdapterUser = new SqlDataAdapter(commandObtenerIds);
+                dataAdapterUser.Fill(tablaResultsIds);
+                var primeraBusqueda = true;
+                foreach (DataRow row in tablaResultsIds.Rows)
+                {
+                    var idCaido = int.Parse(row["ID"].ToString());
+                    var resultBusqueda = InsertaTablas.ObtenerPayloadFiltro(connection, idCaido);
+                    if (primeraBusqueda)
+                    {
+                        primeraBusqueda = false;
+                        tablaResultados = resultBusqueda;
+                    }
+                    else
+                    {
+                        tablaResultados.ImportRow(resultBusqueda.Rows[0]);
+                    }
+
+                }
+                return tablaResultados;
             }
             catch (Exception exception)
             {
@@ -59,7 +76,9 @@ namespace CargaBd.API.Logica
             var fechaDesdeFix = DateTime.Parse(fechaDesde).ToString("yyyy-MM-dd");
             var fechaHastaFix = DateTime.Parse(fechaHasta).ToString("yyyy-MM-dd");
             var tablaResultUsuario = new DataTable();
-            var commandObtenerUsuario = new SqlCommand("ObtenerPayloadEntreFechasAdmin")
+            var tablaResultados = new DataTable();
+            //var commandObtenerUsuario = new SqlCommand("ObtenerPayloadEntreFechasAdmin")
+            var commandObtenerUsuario = new SqlCommand("ObtenerIDsEntreFechasAdmin")
             {
                 CommandType = CommandType.StoredProcedure,
                 Connection = connection,
@@ -81,10 +100,30 @@ namespace CargaBd.API.Logica
             };
             try
             {
+                //obtener los IDs
+                //por cada ID tablaResult.Merge con el resultado de la busqueda por cada ID
+                //retornar la wea
                 commandObtenerUsuario.CommandTimeout = 120000;
                 var dataAdapterUser = new SqlDataAdapter(commandObtenerUsuario);
                 dataAdapterUser.Fill(tablaResultUsuario);
-                return tablaResultUsuario;
+                var primeraBusqueda = true;
+                foreach (DataRow row in tablaResultUsuario.Rows)
+                {
+                    var idCaido = int.Parse(row["ID"].ToString());
+                    var resultBusqueda = InsertaTablas.ObtenerPayloadFiltro(connection, idCaido);
+                    //tablaResultados.Merge(resultBusqueda);
+                    if (primeraBusqueda)
+                    {
+                        primeraBusqueda = false;
+                        tablaResultados = resultBusqueda;
+                    }
+                    else
+                    {
+                        tablaResultados.ImportRow(resultBusqueda.Rows[0]);
+                    }
+                    
+                }
+                return tablaResultados;
             }
             catch (Exception exception)
             {
@@ -133,8 +172,9 @@ namespace CargaBd.API.Logica
         {
             var fechaDesdeFix = DateTime.Parse(fechaDesde).ToString("yyyy-MM-dd");
             var fechaHastaFix = DateTime.Parse(fechaHasta).ToString("yyyy-MM-dd");
-            var tablaResultUsuario = new DataTable();
-            var commandObtenerUsuario = new SqlCommand("ObtenerPayloadEntreFechasYReferencia")
+            var tablaResultIds = new DataTable();
+            var tablaResultados = new DataTable();
+            var commandObtenerIds = new SqlCommand("ObtenerPayloadEntreFechasYReferencia")
             {
                 CommandType = CommandType.StoredProcedure,
                 Connection = connection,
@@ -168,16 +208,32 @@ namespace CargaBd.API.Logica
             };
             try
             {
-                commandObtenerUsuario.CommandTimeout = 120000;
-                var dataAdapterUser = new SqlDataAdapter(commandObtenerUsuario);
-                dataAdapterUser.Fill(tablaResultUsuario);
-                return tablaResultUsuario;
+                commandObtenerIds.CommandTimeout = 120000;
+                var dataAdapterUser = new SqlDataAdapter(commandObtenerIds);
+                dataAdapterUser.Fill(tablaResultIds);
+                var primeraBusqueda = true;
+                foreach (DataRow row in tablaResultIds.Rows)
+                {
+                    var idCaido = int.Parse(row["ID"].ToString());
+                    var resultBusqueda = InsertaTablas.ObtenerPayloadFiltro(connection, idCaido);
+                    //tablaResultados.Merge(resultBusqueda);
+                    if (primeraBusqueda)
+                    {
+                        primeraBusqueda = false;
+                        tablaResultados = resultBusqueda;
+                    }
+                    else
+                    {
+                        tablaResultados.ImportRow(resultBusqueda.Rows[0]);
+                    }
+                }
+                return tablaResultados;
             }
             catch (Exception exception)
             {
                 Console.WriteLine(
-                    $"Ha ocurrido un error al ejecutar el procedure del usuario con mensaje {exception.Message}");
-                Log.Error(exception, "HA OCURRIDO UN ERROR AL RECUPERAR AL USUARIO EN BUSQUEDA MASIVA CON REFERENCIAS");
+                    $"Ha ocurrido un error al ejecutar el procedure ObtenerPayloadEntreFechasYReferencia con mensaje {exception.Message}");
+                Log.Error(exception, "HA OCURRIDO UN ERROR AL RECUPERAR ObtenerPayloadEntreFechasYReferencia EN BUSQUEDA MASIVA CON REFERENCIAS");
                 throw;
             }
         }
@@ -225,8 +281,9 @@ namespace CargaBd.API.Logica
         {
             var fechaDesdeFix = DateTime.Parse(fechaDesde).ToString("yyyy-MM-dd");
             var fechaHastaFix = DateTime.Parse(fechaHasta).ToString("yyyy-MM-dd");
-            var tablaResultUsuario = new DataTable();
-            var commandObtenerUsuario = new SqlCommand("ObtenerPayloadEntreFechas")
+            var tablaResultsIds = new DataTable();
+            var tablaResultados = new DataTable();
+            var commandObtenerIds = new SqlCommand("ObtenerPayloadEntreFechas")
             {
                 CommandType = CommandType.StoredProcedure,
                 Connection = connection,
@@ -254,10 +311,26 @@ namespace CargaBd.API.Logica
             };
             try
             {
-                commandObtenerUsuario.CommandTimeout = 120000;
-                var dataAdapterUser = new SqlDataAdapter(commandObtenerUsuario);
-                dataAdapterUser.Fill(tablaResultUsuario);
-                return tablaResultUsuario;
+                commandObtenerIds.CommandTimeout = 120000;
+                var dataAdapterUser = new SqlDataAdapter(commandObtenerIds);
+                dataAdapterUser.Fill(tablaResultsIds);
+                var primeraBusqueda = true;
+                foreach (DataRow row in tablaResultsIds.Rows)
+                {
+                    var idCaido = int.Parse(row["ID"].ToString());
+                    var resultBusqueda = InsertaTablas.ObtenerPayloadFiltro(connection, idCaido);
+                    //tablaResultados.Merge(resultBusqueda);
+                    if (primeraBusqueda)
+                    {
+                        primeraBusqueda = false;
+                        tablaResultados = resultBusqueda;
+                    }
+                    else
+                    {
+                        tablaResultados.ImportRow(resultBusqueda.Rows[0]);
+                    }
+                }
+                return tablaResultados;
             }
             catch (Exception exception)
             {

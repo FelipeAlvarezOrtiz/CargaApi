@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using CargaBd.API.Models;
 using Microsoft.Data.SqlClient;
+using Serilog;
 
 namespace CargaBd.API.Logica
 {
@@ -159,13 +160,14 @@ namespace CargaBd.API.Logica
             return new List<int>();
         }
 
-        public static PayloadCliente ObtenerPayloadFiltro(SqlConnection connection, int idPayload)
+        public static DataTable ObtenerPayloadFiltro(SqlConnection connection, int idPayload)
         {
+            var tablaPayload = new DataTable();
             try
             {
                 if(connection.State == ConnectionState.Closed)
                     connection.Open();
-                var commandQuery = new SqlCommand()
+                var commandQuery = new SqlCommand("ObtenerPayloadPorId")
                 {
                     Connection = connection,
                     CommandType = CommandType.StoredProcedure,
@@ -176,14 +178,18 @@ namespace CargaBd.API.Logica
                         {
                             Direction = ParameterDirection.Input,
                             DbType = DbType.Int32,
-                            ParameterName = "@idPayload"
+                            ParameterName = "@idPayload",
+                            Value = idPayload
                         }
                     }
                 };
-                return null;
+                var dataAdapterUser = new SqlDataAdapter(commandQuery);
+                dataAdapterUser.Fill(tablaPayload);
+                return tablaPayload;
             }
-            catch (Exception)
+            catch (Exception error)
             {
+                Log.Error(error,"HA OCURRIDO UN ERROR AL OBTENER PAYLOAD CON MENSAJE {0}", error.Message);
                 throw;
             }
         }
