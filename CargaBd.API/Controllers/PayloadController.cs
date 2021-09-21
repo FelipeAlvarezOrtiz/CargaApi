@@ -12,6 +12,10 @@ using CargaBd.API.Models;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Serilog;
+using iTextSharp.text;
+using iTextSharp.text.pdf;
+using System.Net.Mail;
+using System.Net;
 
 namespace CargaBd.API.Controllers
 {
@@ -2134,6 +2138,123 @@ namespace CargaBd.API.Controllers
             }
 
         }
+        [HttpPost("Pickup/Etiqueta")]
+        public async Task<IActionResult> CargarEtiqueta([FromBody] Etiqueta_array request)
+        {
+            List<Etiqueta> _myArray;
+            _myArray = request.Etiquetas;
+            string email = request.email_envio;
+            //creacion de etiqueta libreria barcode
+            //string base64String = Convert.ToBase64String(bitmap1);
+            //string MyValue = "11111111";
+            /*Bitmap BarcodeBmp = IronBarCode.BarcodeWriter.CreateBarcode(MyValue, BarcodeEncoding.Code128).ResizeTo(300, 200).SetMargins(100).ToBitmap();
+            System.IO.MemoryStream ms_ = new MemoryStream();
+            BarcodeBmp.Save(ms_, ImageFormat.Jpeg);
+            byte[] byteImage = ms_.ToArray();
+            var SigBase64 = Convert.ToBase64String(byteImage);
+            byte[] imageBytes = Convert.FromBase64String(SigBase64);*/
+
+            //iTextSharp.text.Image image = iTextSharp.text.Image.GetInstance(imageBytes);
+            System.IO.MemoryStream memoryStream = new System.IO.MemoryStream();
+
+            Document document = new Document(PageSize.A5);
+            PdfWriter writer = PdfWriter.GetInstance(document, memoryStream);
+            document.Open();
+
+            document.AddTitle("Etiqueta PDF");
+
+            foreach (var v in _myArray)
+            {
+                Console.WriteLine("Element = {0}", v.Cliente);
+
+                iTextSharp.text.Font _standardFont = new iTextSharp.text.Font(iTextSharp.text.Font.NORMAL, 8, iTextSharp.text.Font.NORMAL, BaseColor.BLACK);
+
+
+                PdfPTable tblPrueba = new PdfPTable(2);
+                tblPrueba.WidthPercentage = 50;
+
+                iTextSharp.text.Image tif = iTextSharp.text.Image.GetInstance("\\images\\logopdf.JPG");
+                tif.ScalePercent(24f);
+
+                document.Add(tif);
+                document.Add(new Paragraph(v.Compania));
+
+                tblPrueba.AddCell(new PdfPCell { Colspan = 1 });
+                PdfPCell cell = new PdfPCell { Colspan = 1, HorizontalAlignment = 1 };
+                tblPrueba.DefaultCell.Border = Rectangle.NO_BORDER;
+                tblPrueba.AddCell(cell);
+                tblPrueba.AddCell("Cliente");
+                tblPrueba.AddCell(v.Cliente);
+                tblPrueba.AddCell("Dirección");
+                tblPrueba.AddCell(v.Direccion);
+                tblPrueba.AddCell("Número");
+                tblPrueba.AddCell(v.Numero);
+                tblPrueba.AddCell("Referencia");
+                tblPrueba.AddCell(v.Referencia);
+                tblPrueba.AddCell("Móvil");
+                tblPrueba.AddCell(v.movil);
+                tblPrueba.AddCell("Región");
+                tblPrueba.AddCell(v.region);
+                tblPrueba.AddCell("Comuna");
+                tblPrueba.AddCell(v.Comuna);
+                tblPrueba.AddCell("Orden");
+                tblPrueba.AddCell(v.Orden);
+                tblPrueba.AddCell("Bulto");
+                tblPrueba.AddCell(v.Bulto);
+
+                document.Add(tblPrueba);
+
+
+                document.Add(new Paragraph(20,"Recibe"));
+                Chunk linea = new Chunk(new iTextSharp.text.pdf.draw.LineSeparator(1f, 40f, BaseColor.BLACK, Element.ALIGN_CENTER,10f));
+                document.Add(linea);
+                document.Add(new Paragraph(20, "RUT"));
+                Chunk linea2 = new Chunk(new iTextSharp.text.pdf.draw.LineSeparator(1f, 40f, BaseColor.BLACK, Element.ALIGN_CENTER, 10f));
+                document.Add(linea2);
+                document.NewPage();
+            }
+
+
+            byte[] bytes = memoryStream.ToArray();
+            //memoryStream.Position = 0;
+            String base64 = Convert.ToBase64String(bytes);
+            writer.CloseStream = false;
+            document.Close();
+            DateTime localDate = DateTime.Now;
+            memoryStream.Position = 0;
+            try {
+
+                MailMessage mm = new MailMessage("ycastillo@prosys.cl", email);
+                mm.Subject = "subject";
+                mm.IsBodyHtml = true;
+                mm.Body = "<h3>Estimado se adjunta en correo pdf de etiquetas.</h3>";
+                mm.Attachments.Add(new Attachment(memoryStream, "Etiquetas" + localDate + ".pdf"));
+
+
+                SmtpClient smtp = new SmtpClient();
+                smtp.Host = "smtp.gmail.com";
+                smtp.Port = 587;
+                smtp.UseDefaultCredentials = false;
+                smtp.EnableSsl = true;
+                smtp.Credentials = new NetworkCredential(_config.GetValue<string>("configuracion_correo:usuario"), _config.GetValue<string>("configuracion_correo:contrasena"));
+
+
+                smtp.Send(mm);
+
+                document.Dispose();
+                return Ok("Enviado exitoso");
+            }
+            catch(Exception ex)
+            {
+                return Ok("Error en el envio : "+ ex);
+            }
+
+
+
+        }
+
+
+    
 
     }
 }
