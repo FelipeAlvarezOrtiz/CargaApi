@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using Microsoft.Data.SqlClient;
 using Serilog;
@@ -41,6 +42,7 @@ namespace CargaBd.API.Logica
             };
             try
             {
+                var diccionarioAgregados = new Dictionary<string, string>();
                 commandObtenerIds.CommandTimeout = 120000;
                 var dataAdapterUser = new SqlDataAdapter(commandObtenerIds);
                 dataAdapterUser.Fill(tablaResultsIds);
@@ -48,24 +50,25 @@ namespace CargaBd.API.Logica
                 foreach (DataRow row in tablaResultsIds.Rows)
                 {
                     var idCaido = int.Parse(row["ID"].ToString());
-                    var resultBusqueda = InsertaTablas.ObtenerPayloadFiltro(connection, idCaido);
-                    if (primeraBusqueda)
+                    var resultBusqueda = InsertaTablas.ObtenerPayloadFiltro(connection, idCaido,ref diccionarioAgregados);
+                    if (resultBusqueda.Item1)
                     {
-                        primeraBusqueda = false;
-                        tablaResultados = resultBusqueda;
+                        if (primeraBusqueda)
+                        {
+                            primeraBusqueda = false;
+                            tablaResultados = resultBusqueda.Item2;
+                        }
+                        else
+                        {
+                            tablaResultados.ImportRow(resultBusqueda.Item2.Rows[0]);
+                        }
                     }
-                    else
-                    {
-                        tablaResultados.ImportRow(resultBusqueda.Rows[0]);
-                    }
-
                 }
+                //VALIDAR QUE EXISTA UNA ROW IGUAL
                 return tablaResultados;
             }
             catch (Exception exception)
             {
-                Console.WriteLine(
-                    $"Ha ocurrido un error al ejecutar el procedure del usuario con mensaje {exception.Message}");
                 Log.Error(exception, "HA OCURRIDO UN ERROR AL RECUPERAR AL USUARIO EN BUSQUEDA MASIVA CON REFERENCIAS");
                 throw;
             }
@@ -103,6 +106,7 @@ namespace CargaBd.API.Logica
                 //obtener los IDs
                 //por cada ID tablaResult.Merge con el resultado de la busqueda por cada ID
                 //retornar la wea
+                var diccionarioAgregados = new Dictionary<string, string>();
                 commandObtenerUsuario.CommandTimeout = 120000;
                 var dataAdapterUser = new SqlDataAdapter(commandObtenerUsuario);
                 dataAdapterUser.Fill(tablaResultUsuario);
@@ -110,18 +114,20 @@ namespace CargaBd.API.Logica
                 foreach (DataRow row in tablaResultUsuario.Rows)
                 {
                     var idCaido = int.Parse(row["ID"].ToString());
-                    var resultBusqueda = InsertaTablas.ObtenerPayloadFiltro(connection, idCaido);
+                    var resultBusqueda = InsertaTablas.ObtenerPayloadFiltro(connection, idCaido,ref diccionarioAgregados);
                     //tablaResultados.Merge(resultBusqueda);
-                    if (primeraBusqueda)
+                    if (resultBusqueda.Item1)
                     {
-                        primeraBusqueda = false;
-                        tablaResultados = resultBusqueda;
+                        if (primeraBusqueda)
+                        {
+                            primeraBusqueda = false;
+                            tablaResultados = resultBusqueda.Item2;
+                        }
+                        else
+                        {
+                            tablaResultados.ImportRow(resultBusqueda.Item2.Rows[0]);
+                        }
                     }
-                    else
-                    {
-                        tablaResultados.ImportRow(resultBusqueda.Rows[0]);
-                    }
-                    
                 }
                 return tablaResultados;
             }
@@ -208,6 +214,7 @@ namespace CargaBd.API.Logica
             };
             try
             {
+                var diccionarioAgregados = new Dictionary<string, string>();
                 commandObtenerIds.CommandTimeout = 120000;
                 var dataAdapterUser = new SqlDataAdapter(commandObtenerIds);
                 dataAdapterUser.Fill(tablaResultIds);
@@ -215,16 +222,19 @@ namespace CargaBd.API.Logica
                 foreach (DataRow row in tablaResultIds.Rows)
                 {
                     var idCaido = int.Parse(row["ID"].ToString());
-                    var resultBusqueda = InsertaTablas.ObtenerPayloadFiltro(connection, idCaido);
+                    var resultBusqueda = InsertaTablas.ObtenerPayloadFiltro(connection, idCaido,ref diccionarioAgregados);
                     //tablaResultados.Merge(resultBusqueda);
-                    if (primeraBusqueda)
+                    if (resultBusqueda.Item1)
                     {
-                        primeraBusqueda = false;
-                        tablaResultados = resultBusqueda;
-                    }
-                    else
-                    {
-                        tablaResultados.ImportRow(resultBusqueda.Rows[0]);
+                        if (primeraBusqueda)
+                        {
+                            primeraBusqueda = false;
+                            tablaResultados = resultBusqueda.Item2;
+                        }
+                        else
+                        {
+                            tablaResultados.ImportRow(resultBusqueda.Item2.Rows[0]);
+                        }
                     }
                 }
                 return tablaResultados;
@@ -311,6 +321,7 @@ namespace CargaBd.API.Logica
             };
             try
             {
+                var diccionarioAgregados = new Dictionary<string, string>();
                 commandObtenerIds.CommandTimeout = 120000;
                 var dataAdapterUser = new SqlDataAdapter(commandObtenerIds);
                 dataAdapterUser.Fill(tablaResultsIds);
@@ -318,16 +329,17 @@ namespace CargaBd.API.Logica
                 foreach (DataRow row in tablaResultsIds.Rows)
                 {
                     var idCaido = int.Parse(row["ID"].ToString());
-                    var resultBusqueda = InsertaTablas.ObtenerPayloadFiltro(connection, idCaido);
+                    var resultBusqueda = InsertaTablas.ObtenerPayloadFiltro(connection, idCaido,ref diccionarioAgregados);
                     //tablaResultados.Merge(resultBusqueda);
+                    if (!resultBusqueda.Item1) continue;
                     if (primeraBusqueda)
                     {
                         primeraBusqueda = false;
-                        tablaResultados = resultBusqueda;
+                        tablaResultados = resultBusqueda.Item2;
                     }
                     else
                     {
-                        tablaResultados.ImportRow(resultBusqueda.Rows[0]);
+                        tablaResultados.ImportRow(resultBusqueda.Item2.Rows[0]);
                     }
                 }
                 return tablaResultados;

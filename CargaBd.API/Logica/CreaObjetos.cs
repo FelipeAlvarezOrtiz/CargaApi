@@ -80,9 +80,9 @@ namespace CargaBd.API.Logica
                 var folio = row["REFERENCE"].ToString().Replace("( prioridad )", string.Empty).Replace("(prioridad)", string.Empty);
                 var origen = "Santiago";
                 var destino = row["ADDRESS"].ToString();
-                var fechaRecepcion = row["CHECKOUT_TIME"].ToString();
+                var fechaRecepcion = row["PLANNED_DATE"].ToString() + " " + row["estimated_time_departure"].ToString();
                 var estadoEnvio = row["STATUS"].ToString();
-                var fechaEnvio = row["PLANNED_DATE"].ToString() +" "+row["estimated_time_departure"].ToString();
+                var fechaEnvio = row["CHECKIN_TIME"].ToString();
                 var fechaEntrega = row["CHECKOUT_TIME"].ToString();
                 var observacion = row["CHECKOUT_COMMENT"].ToString();
                 var seguimiento = row["ID"].ToString();

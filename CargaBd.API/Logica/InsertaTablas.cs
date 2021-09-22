@@ -112,7 +112,8 @@ namespace CargaBd.API.Logica
                 {
                     CodigoRespuesta = 200,
                     MensajeUsuario = "TODO OK",
-                    ResponseBody = $"Su número de atención es {idCreado}"
+                    ResponseBody = $"Su número de atención es {idCreado}",
+                    NumeroAtencion = idCreado
                 };
             }
             catch(Exception)
@@ -160,7 +161,7 @@ namespace CargaBd.API.Logica
             return new List<int>();
         }
 
-        public static DataTable ObtenerPayloadFiltro(SqlConnection connection, int idPayload)
+        public static Tuple<bool,DataTable> ObtenerPayloadFiltro(SqlConnection connection, int idPayload,ref Dictionary<string,string> datosAgregados)
         {
             var tablaPayload = new DataTable();
             try
@@ -185,11 +186,61 @@ namespace CargaBd.API.Logica
                 };
                 var dataAdapterUser = new SqlDataAdapter(commandQuery);
                 dataAdapterUser.Fill(tablaPayload);
-                return tablaPayload;
+                var referencia = tablaPayload.Rows[0]["REFERENCE"].ToString();
+                if (datosAgregados.ContainsKey(referencia))
+                {
+                    return Tuple.Create<bool,DataTable>(false, null);
+                }
+                var usuario = tablaPayload.Rows[0]["TITLE"].ToString();
+                var resultadoFinal = ObtenerReferenciaMasActual(connection, referencia, usuario);
+                datosAgregados.Add(referencia,usuario);
+                //obtenemos la referencia y vamos a buscar por referencia
+                return Tuple.Create<bool,DataTable>(true,resultadoFinal);
             }
             catch (Exception error)
             {
                 Log.Error(error,"HA OCURRIDO UN ERROR AL OBTENER PAYLOAD CON MENSAJE {0}", error.Message);
+                throw;
+            }
+        }
+
+        public static DataTable ObtenerReferenciaMasActual(SqlConnection connection, string referencia,string usuario)
+        {
+            var tablaPayload = new DataTable();
+            try
+            {
+                if (connection.State == ConnectionState.Closed)
+                    connection.Open();
+                var commandQuery = new SqlCommand("ObtenerTopMaxReferencia")
+                {
+                    Connection = connection,
+                    CommandType = CommandType.StoredProcedure,
+                    CommandTimeout = 10000,
+                    Parameters =
+                    {
+                        new SqlParameter()
+                        {
+                            Direction = ParameterDirection.Input,
+                            DbType = DbType.String,
+                            ParameterName = "@referencia",
+                            Value = referencia
+                        },new SqlParameter()
+                        {
+                            Direction = ParameterDirection.Input,
+                            DbType = DbType.String,
+                            ParameterName = "@usuario",
+                            Value = usuario
+                        }
+                    }
+                };
+                var dataAdapterUser = new SqlDataAdapter(commandQuery);
+                dataAdapterUser.Fill(tablaPayload);
+                //obtenemos la referencia y vamos a buscar por referencia
+                return tablaPayload;
+            }
+            catch (Exception error)
+            {
+                Log.Error(error, "HA OCURRIDO UN ERROR AL OBTENER PAYLOAD CON MENSAJE {0}", error.Message);
                 throw;
             }
         }
