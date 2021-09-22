@@ -58,13 +58,13 @@
     <Folder Include="Properties" />
     <Folder Include="V2" />
     <Folder Include="V2\Procedimientos" />
-    <Folder Include="V2\Tablas" />
     <Folder Include="V1" />
     <Folder Include="V2\Procedimientos\Inserts" />
     <Folder Include="V2\Procedimientos\SelectAdmin" />
     <Folder Include="V2\Procedimientos\SelectUsers" />
     <Folder Include="V2\Procedimientos\Misc" />
     <Folder Include="V1\Tablas" />
+    <Folder Include="V2\Tablas\" />
   </ItemGroup>
   <ItemGroup>
     <Build Include="V2\Tablas\Payload.sql" />
@@ -96,5 +96,9 @@
     <Build Include="V2\Tablas\ExtraFieldValues.sql" />
     <Build Include="V2\Procedimientos\Inserts\InsertarExtraFields.sql" />
     <Build Include="V2\Procedimientos\Misc\ObtenerExtraSegunId.sql" />
+    <Build Include="V2\Procedimientos\Inserts\InsertarNuevaCarga.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="V2\Tablas\NuevaCarga.sql" />
   </ItemGroup>
 </Project>
