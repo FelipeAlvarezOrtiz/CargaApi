@@ -12,6 +12,10 @@ using CargaBd.API.Models;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Serilog;
+using System.IO;
+using CsvHelper;
+using CsvHelper.Configuration;
+using System.Text;
 using iTextSharp.text;
 using iTextSharp.text.pdf;
 using System.Net.Mail;
@@ -29,9 +33,9 @@ namespace CargaBd.API.Controllers
         {
             _config = config;
         }
-        
+
         [HttpPost("CargaPipeline")]
-        public async Task<IActionResult> CargarPipeline([FromBody]FechaDto Fecha,CancellationToken cancellationToken)
+        public async Task<IActionResult> CargarPipeline([FromBody] FechaDto Fecha, CancellationToken cancellationToken)
         {
             await using var connectionValida = new SqlConnection(_config.GetConnectionString("conexion"));
             var nombreUsuario = string.Empty;
@@ -39,9 +43,17 @@ namespace CargaBd.API.Controllers
             var resultValidacion = FiltroConsulta.ValidaTipoUsuario(connectionValida, Fecha.Usuario);
             nombreUsuario = resultValidacion.Item1;
             esAdmin = resultValidacion.Item2;
-            if (!esAdmin) return BadRequest("El usuario no tiene los permisos necesarios para realizar la carga.");
+
+            if (!esAdmin)
+            {
+                return BadRequest("El usuario no tiene los permisos necesarios para realizar la carga.");
+            }
+
             if (!DateTime.TryParse(Fecha.FechaFin, out var TimeFixed))
+            {
                 return BadRequest("El formato de la fecha no es compatible, se espera formato dd-MM-yyyy");
+            }
+
             switch (DateTime.Compare(TimeFixed, DateTime.Today))
             {
                 case > 0:
@@ -52,8 +64,7 @@ namespace CargaBd.API.Controllers
             }
 
             var httpClient = new HttpClient();
-            httpClient.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Token", _config.GetValue<string>("Token"));
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Token", _config.GetValue<string>("Token"));
             //aqui va el While fecha sea menor a hoy
             var errores = 0;
             while (DateTime.Compare(TimeFixed, DateTime.Today) < 0)
@@ -477,7 +488,7 @@ namespace CargaBd.API.Controllers
                                 connection.Open();
                                 commandInsertPayload.CommandTimeout = 120000;
                                 commandInsertPayload.ExecuteNonQuery();
-                                
+
                                 var returnValue = (int)commandInsertPayload.Parameters["@idInsertado"].Value;
 
                                 #region Insertar Tags -- Por cada TAG en rustPayload se inserta
@@ -705,7 +716,7 @@ namespace CargaBd.API.Controllers
                                     Log.Error(ex, $"HA OCURRIDO UN ERROR EN LA CARGA DE EXTRA FIELDS");
                                     Console.Write(ex.Message);
                                 }
-                                
+
                                 #endregion
                             }
                             catch (Exception ex)
@@ -727,1084 +738,25 @@ namespace CargaBd.API.Controllers
                     Log.Information($"HA FINALIZADO LA CARGA DEL DÍA.");
                     TimeFixed = TimeFixed.AddDays(1);
                 }
-                catch(Exception errorException)
+                catch (Exception errorException)
                 {
-                    Console.WriteLine("Ha ocurrido un error con "+errorException.Message);
-                    Log.Error(errorException,$"HA OCURRIDO UN ERROR EN LA CARGA DE DATOS");
+                    Console.WriteLine("Ha ocurrido un error con " + errorException.Message);
+                    Log.Error(errorException, $"HA OCURRIDO UN ERROR EN LA CARGA DE DATOS");
                     TimeFixed = TimeFixed.AddDays(1);
                 }
             }
             //fin while
             return errores == 0 ? Ok() : Ok("Se ha completado exitosamente, pero han ocurrido errores. Verificar log");
         }
-
-        //[HttpPost("NumeroOrden")]
-        //public async Task<IActionResult> ObtenerPayloadPorNumeroDeOrden([FromBody]NumeroOrdenDto request)
-        //{
-        //    if (string.IsNullOrEmpty(request.NumeroOrden)) return BadRequest("El numero de orden no puede ir vácio.");
-        //    if (string.IsNullOrEmpty(request.Usuario)) return BadRequest("El usuario no puede ir vacio.");
-
-        //    await using (var connection = new SqlConnection(_config.GetConnectionString("conexion")))
-        //    {
-        //        var nameUser = string.Empty;
-        //        var esAdmin = false;
-        //        //OBTENER USUARIO
-        //        var commandObtenerUsuario = new SqlCommand("ObtenerUsuario")
-        //        {
-        //            CommandType = CommandType.StoredProcedure,
-        //            Connection = connection,
-        //            Parameters =
-        //            {
-        //                new SqlParameter{
-        //                    ParameterName = "@hash",
-        //                    SqlDbType = SqlDbType.NVarChar,
-        //                    Direction = ParameterDirection.Input,
-        //                    Value = request.Usuario
-        //                }
-        //            }
-        //        };
-        //        try
-        //        {
-        //            connection.Open();
-        //            var tablaResultUsuario = new DataTable();
-        //            commandObtenerUsuario.CommandTimeout = 120000;
-        //            var dataAdapterUser = new SqlDataAdapter(commandObtenerUsuario);
-        //            dataAdapterUser.Fill(tablaResultUsuario);
-        //            if (tablaResultUsuario.Rows.Count <= 0)
-        //                return NotFound("El usuario no existe o no se encuentra activo.");
-        //            nameUser = tablaResultUsuario.Rows[0]["NOMBRE_USUARIO"].ToString();
-        //            esAdmin = tablaResultUsuario.Rows[0]["ESADMIN"].ToString().Equals("True");
-        //        }
-        //        catch (Exception exception)
-        //        {
-        //            Console.WriteLine($"Ha ocurrido un error al ejecutar el procedure del usuario con mensaje {exception.Message}");
-        //            Log.Error(exception, $"HA OCURRIDO UN ERROR AL CONSULTAR POR NUMERO DE ORDEN");
-        //            return BadRequest("Ha ocurrido un error interno");
-        //        }
-
-        //        var commandObtenerData = new SqlCommand("ObtenerPayloadSegunTrack")
-        //        {
-        //            CommandType = CommandType.StoredProcedure,
-        //            Connection = connection,
-        //            Parameters =
-        //            {
-        //                new SqlParameter{
-        //                    ParameterName = "@trackId",
-        //                    SqlDbType = SqlDbType.NVarChar,
-        //                    Direction = ParameterDirection.Input,
-        //                    Value = request.NumeroOrden.ToString()
-        //                },new SqlParameter{
-        //                    ParameterName = "@usuario",
-        //                    SqlDbType = SqlDbType.NVarChar,
-        //                    Direction = ParameterDirection.Input,
-        //                    Value = nameUser
-        //                }
-        //            }
-        //        };
-        //        try
-        //        {
-        //            //connection.Open();
-        //            var tablaResult = new DataTable();
-        //            commandObtenerData.CommandTimeout = 120000;
-        //            var dataAdapter = new SqlDataAdapter(commandObtenerData);
-        //            dataAdapter.Fill(tablaResult);
-        //            if (tablaResult.Rows.Count <= 0)
-        //                return NotFound("No se han encontrado datos en relación a los parametros de búsqueda.");
-        //            if (esAdmin)
-        //            {
-        //                var dtoRespuesta = new PayloadDto();
-        //                foreach (DataRow row in tablaResult.Rows)
-        //                {
-        //                    var idPayload = int.Parse(row["ID"].ToString());
-        //                    dtoRespuesta = CreaObjetos.CreaObjetoAdmin(row);
-        //                    #region Cargar TAGS
-        //                    var commandObtenerTags = new SqlCommand("ObtenerTagsSegunId")
-        //                    {
-        //                        CommandType = CommandType.StoredProcedure,
-        //                        Connection = connection,
-        //                        Parameters =
-        //                    {
-        //                        new SqlParameter{
-        //                            ParameterName = "@id",
-        //                            SqlDbType = SqlDbType.Int,
-        //                            Direction = ParameterDirection.Input,
-        //                            Value = idPayload
-        //                        }
-        //                    }
-        //                    };
-        //                    var dataAdapterTags = new SqlDataAdapter(commandObtenerTags);
-        //                    var tablaTags = new DataTable();
-        //                    dataAdapterTags.Fill(tablaTags);
-        //                    dtoRespuesta.tags = new string[tablaTags.Rows.Count];
-        //                    var iteradorTags = 0;
-        //                    foreach (DataRow tags in tablaTags.Rows)
-        //                    {
-        //                        dtoRespuesta.tags[iteradorTags] = tags["NAMETAG"].ToString();
-        //                        iteradorTags++;
-        //                    }
-        //                    #endregion
-        //                    #region Cargar Pictures
-        //                    var commandObtenerPictures = new SqlCommand("ObtenerPicturesSegunId")
-        //                    {
-        //                        CommandType = CommandType.StoredProcedure,
-        //                        Connection = connection,
-        //                        Parameters =
-        //                    {
-        //                        new SqlParameter{
-        //                            ParameterName = "@id",
-        //                            SqlDbType = SqlDbType.Int,
-        //                            Direction = ParameterDirection.Input,
-        //                            Value = idPayload
-        //                        }
-        //                    }
-        //                    };
-        //                    var dataAdapterPictures = new SqlDataAdapter(commandObtenerPictures);
-        //                    var tablaPictures = new DataTable();
-        //                    dataAdapterPictures.Fill(tablaPictures);
-        //                    dtoRespuesta.pictures = new string[tablaPictures.Rows.Count];
-        //                    var iteradorPictures = 0;
-        //                    foreach (DataRow pictures in tablaPictures.Rows)
-        //                    {
-        //                        dtoRespuesta.pictures[iteradorPictures] = pictures["URLPICTURE"].ToString();
-        //                        iteradorPictures++;
-        //                    }
-        //                    #endregion
-        //                    #region Cargar SkillsRequired
-        //                    var commandObtenerSR = new SqlCommand("ObtenerSkillsRequiredSegunId")
-        //                    {
-        //                        CommandType = CommandType.StoredProcedure,
-        //                        Connection = connection,
-        //                        Parameters =
-        //                    {
-        //                        new SqlParameter{
-        //                            ParameterName = "@id",
-        //                            SqlDbType = SqlDbType.Int,
-        //                            Direction = ParameterDirection.Input,
-        //                            Value = idPayload
-        //                        }
-        //                    }
-        //                    };
-        //                    var dataAdapterSR = new SqlDataAdapter(commandObtenerSR);
-        //                    var tablaSR = new DataTable();
-        //                    dataAdapterSR.Fill(tablaSR);
-        //                    dtoRespuesta.skills_required = new int[tablaSR.Rows.Count];
-        //                    var iteradorSR = 0;
-        //                    foreach (DataRow skillsRequired in tablaSR.Rows)
-        //                    {
-        //                        dtoRespuesta.skills_required[iteradorSR] = int.Parse(skillsRequired["NAMESR"].ToString());
-        //                        iteradorSR++;
-        //                    }
-        //                    #endregion
-
-        //                    #region Cargar SkillsOptionals
-        //                    var commandObtenerSO = new SqlCommand("ObtenerSkillsOptionalsSegunId")
-        //                    {
-        //                        CommandType = CommandType.StoredProcedure,
-        //                        Connection = connection,
-        //                        Parameters =
-        //                    {
-        //                        new SqlParameter{
-        //                            ParameterName = "@id",
-        //                            SqlDbType = SqlDbType.Int,
-        //                            Direction = ParameterDirection.Input,
-        //                            Value = idPayload
-        //                        }
-        //                    }
-        //                    };
-        //                    var dataAdapterSO = new SqlDataAdapter(commandObtenerSO);
-        //                    var tablaSO = new DataTable();
-        //                    dataAdapterSO.Fill(tablaSO);
-        //                    dtoRespuesta.skills_optional = new int[tablaSR.Rows.Count];
-        //                    var iteradorSO = 0;
-        //                    foreach (DataRow skillsOptional in tablaSR.Rows)
-        //                    {
-        //                        dtoRespuesta.skills_optional[iteradorSO] = int.Parse(skillsOptional["NAMESO"].ToString());
-        //                        iteradorSO++;
-        //                    }
-        //                    #endregion
-
-        //                    #region Cargar Extra Fields
-        //                    var commandObtenerEF = new SqlCommand("ObtenerExtraSegunId")
-        //                    {
-        //                        CommandType = CommandType.StoredProcedure,
-        //                        Connection = connection,
-        //                        Parameters =
-        //                        {
-        //                            new SqlParameter{
-        //                                ParameterName = "@id",
-        //                                SqlDbType = SqlDbType.Int,
-        //                                Direction = ParameterDirection.Input,
-        //                                Value = idPayload
-        //                            }
-        //                        }
-        //                    };
-        //                    var dataAdapterEF = new SqlDataAdapter(commandObtenerEF);
-        //                    var tablaEF = new DataTable();
-        //                    dataAdapterEF.Fill(tablaEF);
-        //                    //dtoRespuesta.extra_field_values = new string[tablaEF.Rows.Count];
-        //                    var iteradorEF = 0;
-        //                    //foreach (DataRow extraField in tablaEF.Rows)
-        //                    //{
-        //                    //    dtoRespuesta.extra_field_values[iteradorEF] = (object)extraField["NAMESO"].ToString();}
-        //                    //    iteradorEF++;
-        //                    //}
-        //                    #endregion
-        //                }
-        //                return Ok(dtoRespuesta);
-        //            }
-
-        //            var dtoRespuestaCliente = new PayloadCliente();
-        //            foreach (DataRow row in tablaResult.Rows)
-        //            {
-        //                var idPayload = int.Parse(row["ID"].ToString());
-        //                dtoRespuestaCliente = CreaObjetos.CrearObjetoCliente(row);
-        //                var commandObtenerEF = new SqlCommand("ObtenerExtraSegunId")
-        //                {
-        //                    CommandType = CommandType.StoredProcedure,
-        //                    Connection = connection,
-        //                    Parameters =
-        //                    {
-        //                        new SqlParameter{
-        //                            ParameterName = "@id",
-        //                            SqlDbType = SqlDbType.Int,
-        //                            Direction = ParameterDirection.Input,
-        //                            Value = idPayload
-        //                        }
-        //                    }
-        //                };
-        //                var dataAdapterEF = new SqlDataAdapter(commandObtenerEF);
-        //                var tablaEF = new DataTable();
-        //                dataAdapterEF.Fill(tablaEF);
-        //                var extraHelperClient = new ExtraFieldHelper
-        //                {
-        //                    sep360_nintento = tablaEF.Rows[0]["NINTENTO"].ToString()?? string.Empty,
-        //                    sep360_nombrerecibe = tablaEF.Rows[0]["NOMBRERECIBE"].ToString()?? string.Empty,
-        //                    sep360_nintentof = tablaEF.Rows[0]["INTENTOF"].ToString()?? string.Empty,
-        //                    sep360_rutrecibe = tablaEF.Rows[0]["RUTRECIBE"].ToString()?? string.Empty,
-        //                };
-        //                dtoRespuestaCliente.QuienRecibeNombre = extraHelperClient.sep360_nombrerecibe;
-        //                dtoRespuestaCliente.QuienRecibeRut = extraHelperClient.sep360_rutrecibe;
-        //                dtoRespuestaCliente.Intentos = extraHelperClient.sep360_nintento;
-        //                dtoRespuestaCliente.FechaIntentos = extraHelperClient.sep360_nintentof;
-        //            }
-
-        //            return Ok(dtoRespuestaCliente);
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            Console.Write(ex.Message);
-        //            Log.Error(ex, $"HA OCURRIDO UN ERROR AL CONSULTAR POR NUMERO DE ORDEN");
-        //            return Problem(ex.Message);
-        //        }
-        //        finally
-        //        {
-        //            if (connection.State == ConnectionState.Open)
-        //            {
-        //                connection.Close();
-        //            }
-        //        }
-        //    }
-        //}
-
-        //[HttpPost("BusquedaMasiva")]
-        //public async Task<IActionResult> ObtenerPayloadPorFecha([FromBody]BusquedaMasivaDto request)
-        //{
-        //    if (string.IsNullOrEmpty(request.Usuario)) return BadRequest("El usuario no puede ir vacio.");
-        //    if (string.IsNullOrEmpty(request.FechaDesde) || string.IsNullOrEmpty(request.FechaHasta)) return BadRequest("Los parametros no puede ir vacios.");
-        //    if (!DateTime.TryParse(request.FechaDesde, out var TimeFixedDesde) || !DateTime.TryParse(request.FechaHasta, out var TimeFixedHasta))
-        //        return BadRequest("El formato de la fecha no es compatible");
-        //    if (DateTime.Compare(TimeFixedHasta, TimeFixedDesde) < 0)
-        //        return BadRequest("Los rangos de fecha están cambiados. Limite 'hasta' es menor a la fecha 'desde'");
-        //    if (DateTime.Compare(TimeFixedDesde.AddDays(30), TimeFixedHasta) <= 0)
-        //        return BadRequest("Las fechas no pueden llevar por más de 30 días");
-        //    var TimeFixedDesdeDb = TimeFixedDesde.ToString("yyyy-MM-dd");
-        //    var TimeFixedHastaDb = TimeFixedHasta.ToString("yyyy-MM-dd");
-        //    await using var connection = new SqlConnection(_config.GetConnectionString("conexion"));
-        //    var nameUser = string.Empty;
-        //    var esAdmin = false;
-        //    //OBTENER USUARIO
-        //    var commandObtenerUsuario = new SqlCommand("ObtenerUsuario")
-        //    {
-        //        CommandType = CommandType.StoredProcedure,
-        //        Connection = connection,
-        //        Parameters =
-        //        {
-        //            new SqlParameter{
-        //                ParameterName = "@hash",
-        //                SqlDbType = SqlDbType.NVarChar,
-        //                Direction = ParameterDirection.Input,
-        //                Value = request.Usuario
-        //            }
-        //        }
-        //    };
-        //    try
-        //    {
-        //        connection.Open();
-        //        var tablaResultUsuario = new DataTable();
-        //        commandObtenerUsuario.CommandTimeout = 120000;
-        //        var dataAdapterUser = new SqlDataAdapter(commandObtenerUsuario);
-        //        dataAdapterUser.Fill(tablaResultUsuario);
-        //        if (tablaResultUsuario.Rows.Count <= 0)
-        //            return NotFound("El usuario no existe o no se encuentra activo.");
-        //        nameUser = tablaResultUsuario.Rows[0]["NOMBRE_USUARIO"].ToString();
-        //        esAdmin = tablaResultUsuario.Rows[0]["ESADMIN"].ToString().Equals("True");
-        //    }
-        //    catch (Exception exception)
-        //    {
-        //        Console.WriteLine($"Ha ocurrido un error al ejecutar el procedure del usuario con mensaje {exception.Message}");
-        //        Log.Error(exception, $"HA OCURRIDO UN ERROR AL CONSULTAR POR FECHAS");
-        //        return BadRequest("Ha ocurrido un error interno");
-        //    }
-
-        //    var commandObtenerData = new SqlCommand("ObtenerPayloadEntreFechas")
-        //    {
-        //        CommandType = CommandType.StoredProcedure,
-        //        Connection = connection,
-        //        Parameters =
-        //        {
-        //            new SqlParameter{
-        //                ParameterName = "@fechaDesde",
-        //                SqlDbType = SqlDbType.NVarChar,
-        //                Direction = ParameterDirection.Input,
-        //                Value = TimeFixedDesdeDb
-        //            },new SqlParameter{
-        //                ParameterName = "@fechaHasta",
-        //                SqlDbType = SqlDbType.NVarChar,
-        //                Direction = ParameterDirection.Input,
-        //                Value = TimeFixedHastaDb
-        //            },new SqlParameter{
-        //                ParameterName = "@usuario",
-        //                SqlDbType = SqlDbType.NVarChar,
-        //                Direction = ParameterDirection.Input,
-        //                Value = nameUser
-        //            }
-        //        }
-        //    };
-        //    var idActual = 0;
-        //    try
-        //    {
-        //        //connection.Open();
-        //        var tablaResult = new DataTable();
-        //        commandObtenerData.CommandTimeout = 120000;
-        //        var dataAdapter = new SqlDataAdapter(commandObtenerData);
-        //        dataAdapter.Fill(tablaResult);
-        //        if (tablaResult.Rows.Count <= 0)
-        //            return NotFound("No se han encontrado datos en relación a los parametros de búsqueda.");
-                
-        //        #region Es admin region - removida
-        //        //if (esAdmin)
-        //        //{
-        //        //    var listaPayloads = new List<PayloadDto>();
-        //        //    foreach (DataRow row in tablaResult.Rows)
-        //        //    {
-        //        //        var dtoRespuesta = new PayloadDto();
-
-        //        //        var idPayload = int.Parse(row["ID"].ToString());
-
-        //        //        dtoRespuesta = CreaObjetos.CreaObjetoAdmin(row);
-
-        //        //        #region Cargar TAGS
-        //        //        var commandObtenerTags = new SqlCommand("ObtenerTagsSegunId")
-        //        //        {
-        //        //            CommandType = CommandType.StoredProcedure,
-        //        //            Connection = connection,
-        //        //            Parameters =
-        //        //            {
-        //        //                new SqlParameter{
-        //        //                    ParameterName = "@id",
-        //        //                    SqlDbType = SqlDbType.Int,
-        //        //                    Direction = ParameterDirection.Input,
-        //        //                    Value = idPayload
-        //        //                }
-        //        //            }
-        //        //        };
-        //        //        var dataAdapterTags = new SqlDataAdapter(commandObtenerTags);
-        //        //        var tablaTags = new DataTable();
-        //        //        dataAdapterTags.Fill(tablaTags);
-        //        //        dtoRespuesta.tags = new string[tablaTags.Rows.Count];
-        //        //        var iteradorTags = 0;
-        //        //        foreach (DataRow tags in tablaTags.Rows)
-        //        //        {
-        //        //            dtoRespuesta.tags[iteradorTags] = tags["NAMETAG"].ToString();
-        //        //            iteradorTags++;
-        //        //        }
-        //        //        #endregion
-
-        //        //        #region Cargar Pictures
-        //        //        var commandObtenerPictures = new SqlCommand("ObtenerPicturesSegunId")
-        //        //        {
-        //        //            CommandType = CommandType.StoredProcedure,
-        //        //            Connection = connection,
-        //        //            Parameters =
-        //        //            {
-        //        //                new SqlParameter{
-        //        //                    ParameterName = "@id",
-        //        //                    SqlDbType = SqlDbType.Int,
-        //        //                    Direction = ParameterDirection.Input,
-        //        //                    Value = idPayload
-        //        //                }
-        //        //            }
-        //        //        };
-        //        //        var dataAdapterPictures = new SqlDataAdapter(commandObtenerPictures);
-        //        //        var tablaPictures = new DataTable();
-        //        //        dataAdapterPictures.Fill(tablaPictures);
-        //        //        dtoRespuesta.pictures = new string[tablaPictures.Rows.Count];
-        //        //        var iteradorPictures = 0;
-        //        //        foreach (DataRow pictures in tablaPictures.Rows)
-        //        //        {
-        //        //            dtoRespuesta.pictures[iteradorPictures] = pictures["URLPICTURE"].ToString();
-        //        //            iteradorPictures++;
-        //        //        }
-        //        //        #endregion
-
-        //        //        #region Cargar SkillsRequired
-        //        //        var commandObtenerSR = new SqlCommand("ObtenerSkillsRequiredSegunId")
-        //        //        {
-        //        //            CommandType = CommandType.StoredProcedure,
-        //        //            Connection = connection,
-        //        //            Parameters =
-        //        //            {
-        //        //                new SqlParameter{
-        //        //                    ParameterName = "@id",
-        //        //                    SqlDbType = SqlDbType.Int,
-        //        //                    Direction = ParameterDirection.Input,
-        //        //                    Value = idPayload
-        //        //                }
-        //        //            }
-        //        //        };
-        //        //        var dataAdapterSR = new SqlDataAdapter(commandObtenerSR);
-        //        //        var tablaSR = new DataTable();
-        //        //        dataAdapterSR.Fill(tablaSR);
-        //        //        dtoRespuesta.skills_required = new int[tablaSR.Rows.Count];
-        //        //        var iteradorSR = 0;
-        //        //        foreach (DataRow skillsRequired in tablaSR.Rows)
-        //        //        {
-        //        //            dtoRespuesta.skills_required[iteradorSR] = int.Parse(skillsRequired["NAMESR"].ToString());
-        //        //            iteradorSR++;
-        //        //        }
-        //        //        #endregion
-
-        //        //        #region Cargar SkillsOptionals
-        //        //        var commandObtenerSO = new SqlCommand("ObtenerSkillsOptionalsSegunId")
-        //        //        {
-        //        //            CommandType = CommandType.StoredProcedure,
-        //        //            Connection = connection,
-        //        //            Parameters =
-        //        //            {
-        //        //                new SqlParameter{
-        //        //                    ParameterName = "@id",
-        //        //                    SqlDbType = SqlDbType.Int,
-        //        //                    Direction = ParameterDirection.Input,
-        //        //                    Value = idPayload
-        //        //                }
-        //        //            }
-        //        //        };
-        //        //        var dataAdapterSO = new SqlDataAdapter(commandObtenerSO);
-        //        //        var tablaSO = new DataTable();
-        //        //        dataAdapterSO.Fill(tablaSO);
-        //        //        dtoRespuesta.skills_optional = new int[tablaSR.Rows.Count];
-        //        //        var iteradorSO = 0;
-        //        //        foreach (DataRow skillsOptional in tablaSO.Rows)
-        //        //        {
-        //        //            dtoRespuesta.skills_optional[iteradorSO] = int.Parse(skillsOptional["NAMESO"].ToString());
-        //        //            iteradorSO++;
-        //        //        }
-        //        //        #endregion
-
-        //        //        listaPayloads.Add(dtoRespuesta);
-        //        //    }
-        //        //    return (listaPayloads.Count > 0) ? Ok(listaPayloads) : NotFound("No existe data para los filtros ingresados");
-        //        //}
-        //        #endregion
-
-        //        var listaPayloadCliente = new List<PayloadCliente>();
-        //        foreach (DataRow row in tablaResult.Rows)
-        //        {
-        //            var dtoRespuestaCliente = new PayloadCliente();
-        //            dtoRespuestaCliente = CreaObjetos.CrearObjetoCliente(row);
-        //            listaPayloadCliente.Add(dtoRespuestaCliente);
-        //        }
-        //        return (listaPayloadCliente.Count > 0) ? Ok(listaPayloadCliente) : NotFound("No existe data para los filtros ingresados");
-
-        //    }
-        //    catch (Exception exception)
-        //    {
-        //        Console.WriteLine(idActual);
-        //        Log.Error(exception, $"HA OCURRIDO UN ERROR AL CONSULTAR POR FECHAS EN EL {idActual}");
-        //        return Problem(exception.Message);
-        //    }
-        //    finally
-        //    {
-        //        if (connection.State == ConnectionState.Open)
-        //        {
-        //            connection.Close();
-        //        }
-        //    }
-        //}
-
-        //[HttpPost("Referencia")]
-        //public async Task<IActionResult> ObtenerPayloadPorReference([FromBody]ReferenciaDto request)
-        //{
-        //    if (string.IsNullOrEmpty(request.Usuario)) return BadRequest("El usuario no puede ir vacio.");
-        //    if (string.IsNullOrEmpty(request.Referencia)) return BadRequest("La referencia no puede ser nula");
-        //    await using var connection = new SqlConnection(_config.GetConnectionString("conexion"));
-        //    var nameUser = string.Empty;
-        //    var esAdmin = false;
-        //    //OBTENER USUARIO
-        //    var commandObtenerUsuario = new SqlCommand("ObtenerUsuario")
-        //    {
-        //        CommandType = CommandType.StoredProcedure,
-        //        Connection = connection,
-        //        Parameters =
-        //        {
-        //            new SqlParameter{
-        //                ParameterName = "@hash",
-        //                SqlDbType = SqlDbType.NVarChar,
-        //                Direction = ParameterDirection.Input,
-        //                Value = request.Usuario
-        //            }
-        //        }
-        //    };
-        //    try
-        //    {
-        //        connection.Open();
-        //        var tablaResultUsuario = new DataTable();
-        //        commandObtenerUsuario.CommandTimeout = 120000;
-        //        var dataAdapterUser = new SqlDataAdapter(commandObtenerUsuario);
-        //        dataAdapterUser.Fill(tablaResultUsuario);
-        //        if (tablaResultUsuario.Rows.Count <= 0)
-        //            return NotFound("El usuario no existe o no se encuentra activo.");
-        //        nameUser = tablaResultUsuario.Rows[0]["NOMBRE_USUARIO"].ToString();
-        //        esAdmin = tablaResultUsuario.Rows[0]["ESADMIN"].ToString().Equals("True");
-        //    }
-        //    catch (Exception exception)
-        //    {
-        //        Console.WriteLine($"Ha ocurrido un error al ejecutar el procedure del usuario con mensaje {exception.Message}");
-        //        Log.Error(exception, $"HA OCURRIDO UN ERROR AL CONSULTAR POR REFERENCIA");
-        //        return BadRequest("Ha ocurrido un error interno");
-        //    }
-        //    var commandObtenerData = new SqlCommand("ObtenerPayloadPorReferencia")
-        //    {
-        //        CommandType = CommandType.StoredProcedure,
-        //        Connection = connection,
-        //        Parameters =
-        //        {
-        //            new SqlParameter{
-        //                ParameterName = "@reference",
-        //                SqlDbType = SqlDbType.NVarChar,
-        //                Direction = ParameterDirection.Input,
-        //                Value = request.Referencia
-        //            }, new SqlParameter{
-        //                ParameterName = "@usuario",
-        //                SqlDbType = SqlDbType.NVarChar,
-        //                Direction = ParameterDirection.Input,
-        //                Value = nameUser
-        //            }
-        //        }
-        //    };
-        //    try
-        //    {
-        //        //connection.Open();
-        //        var tablaResult = new DataTable();
-        //        commandObtenerData.CommandTimeout = 120000;
-        //        var dataAdapter = new SqlDataAdapter(commandObtenerData);
-        //        dataAdapter.Fill(tablaResult);
-        //        if (tablaResult.Rows.Count <= 0)
-        //            return NotFound("No se han encontrado datos en relación a los parametros de búsqueda.");
-        //        if (esAdmin)
-        //        {
-        //            var listaPayloads = new List<PayloadDto>();
-        //            foreach (DataRow row in tablaResult.Rows)
-        //            {
-        //                var dtoRespuesta = new PayloadDto();
-        //                #region Parse testing
-        //                var idPayload = int.Parse(row["ID"].ToString());
-        //                //var id = int.Parse(row["ID"].ToString() ?? string.Empty);
-        //                //int? order = int.TryParse(row["ORDER"].ToString(), out var orderParsed) ? orderParsed : null;
-        //                var tracking_id = row["TRACKING_ID"].ToString();
-        //                var status = row["STATUS"].ToString();
-        //                var title = row["TITLE"].ToString();
-        //                var address = row["ADDRESS"].ToString();
-        //                var checkin_time = row["CHECKIN_TIME"].ToString();
-        //                var checkout_comment = row["CHECKOUT_COMMENT"].ToString();
-        //                var checkout_latitude = row["CHECKOUT_LATITUDE"].ToString();
-        //                var checkout_longitude = row["CHECKOUT_LONGITUDE"].ToString();
-        //                var checkout_observation = row["CHECKOUT_OBSERVATION"].ToString();
-        //                var checkout_time = row["CHECKOUT_TIME"].ToString();
-        //                var contact_email = row["CONTACT_EMAIL"].ToString();
-        //                var contact_name = row["CONTACT_NAME"].ToString();
-        //                var contact_phone = row["CONTACT_PHONE"].ToString();
-        //                var created = row["CREATED"].ToString();
-        //                var current_eta = row["CURRENT_ETA"].ToString();
-        //                var duration = row["DURATION"].ToString();
-        //                var estimated_time_arrival = row["ESTIMATED_TIME_ARRIVAL"].ToString();
-        //                var estimated_time_departure = row["ESTIMATED_TIME_DEPARTURE"].ToString();
-        //                var eta_current = row["ETA_CURRENT"].ToString();
-        //                var eta_predicted = row["ETA_PREDICTED"].ToString();
-        //                var extra_field_values = row["EXTRA_FIELD_VALUES"].ToString();
-        //                var fleet = row["FLEET"].ToString();
-        //                var geocode_alert = row["GEOCODE_ALERT"].ToString();
-        //                var has_alert = row["HAS_ALERT"].ToString().Equals("true");
-        //                var latitude = row["LATITUDE"].ToString();
-        //                var longitude = row["LONGITUDE"].ToString();
-        //                var modified = row["MODIFIED"].ToString();
-        //                var notes = row["NOTES"].ToString();
-        //                var planned_date = row["PLANNED_DATE"].ToString();
-        //                var priority = row["PRIORITY"].ToString().Equals("true");
-        //                var programmed_date = row["PROGRAMMED_DATE"].ToString();
-        //                var window_start_2 = row["WINDOW_START_2"].ToString();
-        //                var window_end = row["WINDOW_END"].ToString();
-        //                var window_start = row["WINDOW_START"].ToString();
-        //                var window_end_2 = row["WINDOW_END_2"].ToString();
-        //                var visit_type = row["VISIT_TYPE"].ToString();
-        //                var signature = row["SIGNATURE"].ToString();
-        //                var route_estimated_time_start = row["ROUTE_ESTIMATED_TIME_START"].ToString();
-        //                var route = row["ROUTE"].ToString();
-        //                var reference = row["REFERENCE"].ToString();
-        //                var vehicle = int.Parse(row["VEHICLE"].ToString());
-        //                //var driver = int.Parse(row["DRIVER"].ToString() ?? string.Empty);
-        //                //var priority_level = int.Parse(row["PRIORITY_LEVEL"].ToString() ?? string.Empty);
-        //                var load = decimal.Parse(row["LOAD"].ToString());
-        //                var load_2 = decimal.Parse(row["LOAD_2"].ToString());
-        //                var load_3 = decimal.Parse(row["LOAD_3"].ToString());
-        //                #endregion
-        //                dtoRespuesta = CreaObjetos.CreaObjetoAdmin(row);
-
-        //                #region Cargar TAGS
-        //                var commandObtenerTags = new SqlCommand("ObtenerTagsSegunId")
-        //                {
-        //                    CommandType = CommandType.StoredProcedure,
-        //                    Connection = connection,
-        //                    Parameters =
-        //                    {
-        //                        new SqlParameter{
-        //                            ParameterName = "@id",
-        //                            SqlDbType = SqlDbType.Int,
-        //                            Direction = ParameterDirection.Input,
-        //                            Value = idPayload
-        //                        }
-        //                    }
-        //                };
-        //                var dataAdapterTags = new SqlDataAdapter(commandObtenerTags);
-        //                var tablaTags = new DataTable();
-        //                dataAdapterTags.Fill(tablaTags);
-        //                dtoRespuesta.tags = new string[tablaTags.Rows.Count];
-        //                var iteradorTags = 0;
-        //                foreach (DataRow tags in tablaTags.Rows)
-        //                {
-        //                    dtoRespuesta.tags[iteradorTags] = tags["NAMETAG"].ToString();
-        //                    iteradorTags++;
-        //                }
-        //                #endregion
-
-        //                #region Cargar Pictures
-        //                var commandObtenerPictures = new SqlCommand("ObtenerPicturesSegunId")
-        //                {
-        //                    CommandType = CommandType.StoredProcedure,
-        //                    Connection = connection,
-        //                    Parameters =
-        //                    {
-        //                        new SqlParameter{
-        //                            ParameterName = "@id",
-        //                            SqlDbType = SqlDbType.Int,
-        //                            Direction = ParameterDirection.Input,
-        //                            Value = idPayload
-        //                        }
-        //                    }
-        //                };
-        //                var dataAdapterPictures = new SqlDataAdapter(commandObtenerPictures);
-        //                var tablaPictures = new DataTable();
-        //                dataAdapterPictures.Fill(tablaPictures);
-        //                dtoRespuesta.pictures = new string[tablaPictures.Rows.Count];
-        //                var iteradorPictures = 0;
-        //                foreach (DataRow pictures in tablaPictures.Rows)
-        //                {
-        //                    dtoRespuesta.pictures[iteradorPictures] = pictures["URLPICTURE"].ToString();
-        //                    iteradorPictures++;
-        //                }
-        //                #endregion
-
-        //                #region Cargar SkillsRequired
-        //                var commandObtenerSR = new SqlCommand("ObtenerSkillsRequiredSegunId")
-        //                {
-        //                    CommandType = CommandType.StoredProcedure,
-        //                    Connection = connection,
-        //                    Parameters =
-        //                    {
-        //                        new SqlParameter{
-        //                            ParameterName = "@id",
-        //                            SqlDbType = SqlDbType.Int,
-        //                            Direction = ParameterDirection.Input,
-        //                            Value = idPayload
-        //                        }
-        //                    }
-        //                };
-        //                var dataAdapterSR = new SqlDataAdapter(commandObtenerSR);
-        //                var tablaSR = new DataTable();
-        //                dataAdapterSR.Fill(tablaSR);
-        //                dtoRespuesta.skills_required = new int[tablaSR.Rows.Count];
-        //                var iteradorSR = 0;
-        //                foreach (DataRow skillsRequired in tablaSR.Rows)
-        //                {
-        //                    dtoRespuesta.skills_required[iteradorSR] = int.Parse(skillsRequired["NAMESR"].ToString());
-        //                    iteradorSR++;
-        //                }
-        //                #endregion
-
-        //                #region Cargar SkillsOptionals
-        //                var commandObtenerSO = new SqlCommand("ObtenerSkillsOptionalsSegunId")
-        //                {
-        //                    CommandType = CommandType.StoredProcedure,
-        //                    Connection = connection,
-        //                    Parameters =
-        //                    {
-        //                        new SqlParameter{
-        //                            ParameterName = "@id",
-        //                            SqlDbType = SqlDbType.Int,
-        //                            Direction = ParameterDirection.Input,
-        //                            Value = idPayload
-        //                        }
-        //                    }
-        //                };
-        //                var dataAdapterSO = new SqlDataAdapter(commandObtenerSO);
-        //                var tablaSO = new DataTable();
-        //                dataAdapterSO.Fill(tablaSO);
-        //                dtoRespuesta.skills_optional = new int[tablaSR.Rows.Count];
-        //                var iteradorSO = 0;
-        //                foreach (DataRow skillsOptional in tablaSO.Rows)
-        //                {
-        //                    dtoRespuesta.skills_optional[iteradorSO] = int.Parse(skillsOptional["NAMESO"].ToString());
-        //                    iteradorSO++;
-        //                }
-        //                #endregion
-
-        //                listaPayloads.Add(dtoRespuesta);
-        //            }
-        //            return (listaPayloads.Count > 0) ? Ok(listaPayloads) : NotFound("No existe data para los filtros ingresados");
-        //        }
-
-        //        var listaPayloadCliente = new List<PayloadCliente>();
-        //        foreach (DataRow row in tablaResult.Rows)
-        //        {
-        //            var dtoRespuestaCliente = new PayloadCliente();
-        //            dtoRespuestaCliente = CreaObjetos.CrearObjetoCliente(row);
-        //            listaPayloadCliente.Add(dtoRespuestaCliente);
-        //        }
-        //        return (listaPayloadCliente.Count > 0) ? Ok(listaPayloadCliente) : NotFound("No existe data para los filtros ingresados");
-        //    }
-        //    catch (Exception exception)
-        //    {
-        //        Log.Error(exception, $"HA OCURRIDO UN ERROR AL CONSULTAR POR REFERENCIA");
-        //        return Problem(exception.Message);
-        //    }
-        //    finally
-        //    {
-        //        if (connection.State == ConnectionState.Open)
-        //        {
-        //            connection.Close();
-        //        }
-        //    }
-        //}
-
-        //[HttpPost("Masivo")]
-        //public async Task<IActionResult> ObtenerPayloadPorFechaReferencia([FromBody]MasivaDto request)
-        //{
-        //    if (string.IsNullOrEmpty(request.Usuario)) return BadRequest("El usuario no puede ir vacio.");
-        //    if (string.IsNullOrEmpty(request.FechaDesde) && string.IsNullOrEmpty(request.FechaHasta) &&
-        //        string.IsNullOrEmpty(request.Referencia))
-        //        return BadRequest("Los parametros no pueden ir en vacio.");
-        //    var TimeFixedDesdeDb = string.Empty;
-        //    var TimeFixedHastaDb = string.Empty;
-        //    if (!request.FechaDesde.Equals("-") && !request.FechaHasta.Equals("-"))
-        //    {
-        //        if (!DateTime.TryParse(request.FechaDesde, out var TimeFixedDesde) ||
-        //            !DateTime.TryParse(request.FechaHasta, out var TimeFixedHasta))
-        //            return BadRequest("El formato de la fecha no es compatible");
-        //        if (DateTime.Compare(TimeFixedHasta, TimeFixedDesde) < 0)
-        //            return BadRequest("Los rangos de fecha están cambiados. Limite 'hasta' es menor a la fecha 'desde'");
-        //        TimeFixedDesdeDb = TimeFixedDesde.ToString("yyyy-MM-dd");
-        //        TimeFixedHastaDb = TimeFixedHasta.ToString("yyyy-MM-dd");
-        //    }
-        //    else
-        //    {
-        //        if (string.IsNullOrEmpty(request.Referencia))
-        //            return BadRequest("Al menos un filtro de búsqueda debe ser enviado.");
-        //    }
-        //    await using var connection = new SqlConnection(_config.GetConnectionString("conexion"));
-        //    var nameUser = string.Empty;
-        //    var esAdmin = false;
-        //    //OBTENER USUARIO
-        //    var commandObtenerUsuario = new SqlCommand("ObtenerUsuario")
-        //    {
-        //        CommandType = CommandType.StoredProcedure,
-        //        Connection = connection,
-        //        Parameters =
-        //        {
-        //            new SqlParameter{
-        //                ParameterName = "@hash",
-        //                SqlDbType = SqlDbType.NVarChar,
-        //                Direction = ParameterDirection.Input,
-        //                Value = request.Usuario
-        //            }
-        //        }
-        //    };
-        //    try
-        //    {
-        //        connection.Open();
-        //        var tablaResultUsuario = new DataTable();
-        //        commandObtenerUsuario.CommandTimeout = 120000;
-        //        var dataAdapterUser = new SqlDataAdapter(commandObtenerUsuario);
-        //        dataAdapterUser.Fill(tablaResultUsuario);
-        //        if (tablaResultUsuario.Rows.Count <= 0)
-        //            return NotFound("El usuario no existe o no se encuentra activo.");
-        //        nameUser = tablaResultUsuario.Rows[0]["NOMBRE_USUARIO"].ToString();
-        //        esAdmin = tablaResultUsuario.Rows[0]["ESADMIN"].ToString().Equals("True");
-        //    }
-        //    catch (Exception exception)
-        //    {
-        //        Console.WriteLine($"Ha ocurrido un error al ejecutar el procedure del usuario con mensaje {exception.Message}");
-        //        Log.Error(exception,"HA OCURRIDO UN ERROR AL RECUPERAR AL USUARIO EN BUSQUEDA MASIVA CON REFERENCIAS");
-        //        return BadRequest("Ha ocurrido un error interno");
-        //    }
-        //    var commandObtenerData = new SqlCommand("ObtenerPayloadEntreFechasYReferencia")
-        //    {
-        //        CommandType = CommandType.StoredProcedure,
-        //        Connection = connection,
-        //        Parameters =
-        //        {
-        //            new SqlParameter{
-        //                ParameterName = "@fechaDesde",
-        //                SqlDbType = SqlDbType.NVarChar,
-        //                Direction = ParameterDirection.Input,
-        //                Value = TimeFixedDesdeDb
-        //            },new SqlParameter{
-        //                ParameterName = "@fechaHasta",
-        //                SqlDbType = SqlDbType.NVarChar,
-        //                Direction = ParameterDirection.Input,
-        //                Value = TimeFixedHastaDb
-        //            },new SqlParameter{
-        //                ParameterName = "@referencia",
-        //                SqlDbType = SqlDbType.NVarChar,
-        //                Direction = ParameterDirection.Input,
-        //                Value = request.Referencia
-        //            },new SqlParameter{
-        //                ParameterName = "@usuario",
-        //                SqlDbType = SqlDbType.NVarChar,
-        //                Direction = ParameterDirection.Input,
-        //                Value = nameUser
-        //            }
-        //        }
-        //    };
-        //    try
-        //    {
-        //        //connection.Open();
-        //        var tablaResult = new DataTable();
-        //        commandObtenerData.CommandTimeout = 120000;
-        //        var dataAdapter = new SqlDataAdapter(commandObtenerData);
-        //        dataAdapter.Fill(tablaResult);
-        //        if (tablaResult.Rows.Count <= 0)
-        //            return NotFound("No se han encontrado datos en relación a los parametros de búsqueda.");
-        //        if (esAdmin)
-        //        {
-        //            var listaPayloads = new List<PayloadDto>();
-        //            foreach (DataRow row in tablaResult.Rows)
-        //            {
-        //                var dtoRespuesta = new PayloadDto();
-                        
-        //                #region Parse testing
-        //                var idPayload = int.Parse(row["ID"].ToString());
-        //                //var id = int.Parse(row["ID"].ToString() ?? string.Empty);
-        //                //int? order = int.TryParse(row["ORDER"].ToString(), out var orderParsed) ? orderParsed : null;
-        //                var tracking_id = row["TRACKING_ID"].ToString();
-        //                var status = row["STATUS"].ToString();
-        //                var title = row["TITLE"].ToString();
-        //                var address = row["ADDRESS"].ToString();
-        //                var checkin_time = row["CHECKIN_TIME"].ToString();
-        //                var checkout_comment = row["CHECKOUT_COMMENT"].ToString();
-        //                var checkout_latitude = row["CHECKOUT_LATITUDE"].ToString();
-        //                var checkout_longitude = row["CHECKOUT_LONGITUDE"].ToString();
-        //                var checkout_observation = row["CHECKOUT_OBSERVATION"].ToString();
-        //                var checkout_time = row["CHECKOUT_TIME"].ToString();
-        //                var contact_email = row["CONTACT_EMAIL"].ToString();
-        //                var contact_name = row["CONTACT_NAME"].ToString();
-        //                var contact_phone = row["CONTACT_PHONE"].ToString();
-        //                var created = row["CREATED"].ToString();
-        //                var current_eta = row["CURRENT_ETA"].ToString();
-        //                var duration = row["DURATION"].ToString();
-        //                var estimated_time_arrival = row["ESTIMATED_TIME_ARRIVAL"].ToString();
-        //                var estimated_time_departure = row["ESTIMATED_TIME_DEPARTURE"].ToString();
-        //                var eta_current = row["ETA_CURRENT"].ToString();
-        //                var eta_predicted = row["ETA_PREDICTED"].ToString();
-        //                var extra_field_values = row["EXTRA_FIELD_VALUES"].ToString();
-        //                var fleet = row["FLEET"].ToString();
-        //                var geocode_alert = row["GEOCODE_ALERT"].ToString();
-        //                var has_alert = row["HAS_ALERT"].ToString().Equals("true");
-        //                var latitude = row["LATITUDE"].ToString();
-        //                var longitude = row["LONGITUDE"].ToString();
-        //                var modified = row["MODIFIED"].ToString();
-        //                var notes = row["NOTES"].ToString();
-        //                var planned_date = row["PLANNED_DATE"].ToString();
-        //                var priority = row["PRIORITY"].ToString().Equals("true");
-        //                var programmed_date = row["PROGRAMMED_DATE"].ToString();
-        //                var window_start_2 = row["WINDOW_START_2"].ToString();
-        //                var window_end = row["WINDOW_END"].ToString();
-        //                var window_start = row["WINDOW_START"].ToString();
-        //                var window_end_2 = row["WINDOW_END_2"].ToString();
-        //                var visit_type = row["VISIT_TYPE"].ToString();
-        //                var signature = row["SIGNATURE"].ToString();
-        //                var route_estimated_time_start = row["ROUTE_ESTIMATED_TIME_START"].ToString();
-        //                var route = row["ROUTE"].ToString();
-        //                var reference = row["REFERENCE"].ToString();
-        //                var vehicle = int.Parse(row["VEHICLE"].ToString());
-        //                //var driver = int.Parse(row["DRIVER"].ToString() ?? string.Empty);
-        //                //var priority_level = int.Parse(row["PRIORITY_LEVEL"].ToString() ?? string.Empty);
-        //                var load = decimal.Parse(row["LOAD"].ToString());
-        //                var load_2 = decimal.Parse(row["LOAD_2"].ToString());
-        //                var load_3 = decimal.Parse(row["LOAD_3"].ToString());
-        //                #endregion
-                        
-        //                dtoRespuesta = CreaObjetos.CreaObjetoAdmin(row);
-
-        //                #region Cargar TAGS
-        //                var commandObtenerTags = new SqlCommand("ObtenerTagsSegunId")
-        //                {
-        //                    CommandType = CommandType.StoredProcedure,
-        //                    Connection = connection,
-        //                    Parameters =
-        //                    {
-        //                        new SqlParameter{
-        //                            ParameterName = "@id",
-        //                            SqlDbType = SqlDbType.Int,
-        //                            Direction = ParameterDirection.Input,
-        //                            Value = idPayload
-        //                        }
-        //                    }
-        //                };
-        //                var dataAdapterTags = new SqlDataAdapter(commandObtenerTags);
-        //                var tablaTags = new DataTable();
-        //                dataAdapterTags.Fill(tablaTags);
-        //                dtoRespuesta.tags = new string[tablaTags.Rows.Count];
-        //                var iteradorTags = 0;
-        //                foreach (DataRow tags in tablaTags.Rows)
-        //                {
-        //                    dtoRespuesta.tags[iteradorTags] = tags["NAMETAG"].ToString();
-        //                    iteradorTags++;
-        //                }
-        //                #endregion
-
-        //                #region Cargar Pictures
-        //                var commandObtenerPictures = new SqlCommand("ObtenerPicturesSegunId")
-        //                {
-        //                    CommandType = CommandType.StoredProcedure,
-        //                    Connection = connection,
-        //                    Parameters =
-        //                    {
-        //                        new SqlParameter{
-        //                            ParameterName = "@id",
-        //                            SqlDbType = SqlDbType.Int,
-        //                            Direction = ParameterDirection.Input,
-        //                            Value = idPayload
-        //                        }
-        //                    }
-        //                };
-        //                var dataAdapterPictures = new SqlDataAdapter(commandObtenerPictures);
-        //                var tablaPictures = new DataTable();
-        //                dataAdapterPictures.Fill(tablaPictures);
-        //                dtoRespuesta.pictures = new string[tablaPictures.Rows.Count];
-        //                var iteradorPictures = 0;
-        //                foreach (DataRow pictures in tablaPictures.Rows)
-        //                {
-        //                    dtoRespuesta.pictures[iteradorPictures] = pictures["URLPICTURE"].ToString();
-        //                    iteradorPictures++;
-        //                }
-        //                #endregion
-
-        //                #region Cargar SkillsRequired
-        //                var commandObtenerSR = new SqlCommand("ObtenerSkillsRequiredSegunId")
-        //                {
-        //                    CommandType = CommandType.StoredProcedure,
-        //                    Connection = connection,
-        //                    Parameters =
-        //                    {
-        //                        new SqlParameter{
-        //                            ParameterName = "@id",
-        //                            SqlDbType = SqlDbType.Int,
-        //                            Direction = ParameterDirection.Input,
-        //                            Value = idPayload
-        //                        }
-        //                    }
-        //                };
-        //                var dataAdapterSR = new SqlDataAdapter(commandObtenerSR);
-        //                var tablaSR = new DataTable();
-        //                dataAdapterSR.Fill(tablaSR);
-        //                dtoRespuesta.skills_required = new int[tablaSR.Rows.Count];
-        //                var iteradorSR = 0;
-        //                foreach (DataRow skillsRequired in tablaSR.Rows)
-        //                {
-        //                    dtoRespuesta.skills_required[iteradorSR] = int.Parse(skillsRequired["NAMESR"].ToString());
-        //                    iteradorSR++;
-        //                }
-        //                #endregion
-
-        //                #region Cargar SkillsOptionals
-        //                var commandObtenerSO = new SqlCommand("ObtenerSkillsOptionalsSegunId")
-        //                {
-        //                    CommandType = CommandType.StoredProcedure,
-        //                    Connection = connection,
-        //                    Parameters =
-        //                    {
-        //                        new SqlParameter{
-        //                            ParameterName = "@id",
-        //                            SqlDbType = SqlDbType.Int,
-        //                            Direction = ParameterDirection.Input,
-        //                            Value = idPayload
-        //                        }
-        //                    }
-        //                };
-        //                var dataAdapterSO = new SqlDataAdapter(commandObtenerSO);
-        //                var tablaSO = new DataTable();
-        //                dataAdapterSO.Fill(tablaSO);
-        //                dtoRespuesta.skills_optional = new int[tablaSR.Rows.Count];
-        //                var iteradorSO = 0;
-        //                foreach (DataRow skillsOptional in tablaSO.Rows)
-        //                {
-        //                    dtoRespuesta.skills_optional[iteradorSO] = int.Parse(skillsOptional["NAMESO"].ToString());
-        //                    iteradorSO++;
-        //                }
-        //                #endregion
-
-        //                listaPayloads.Add(dtoRespuesta);
-        //            }
-        //            return (listaPayloads.Count > 0) ? Ok(listaPayloads) : NotFound("No existe data para los filtros ingresados");
-        //        }
-
-        //        var listaPayloadCliente = new List<PayloadCliente>();
-        //        foreach (DataRow row in tablaResult.Rows)
-        //        {
-        //            var dtoRespuestaCliente = new PayloadCliente();
-        //            dtoRespuestaCliente = CreaObjetos.CrearObjetoCliente(row);
-        //            listaPayloadCliente.Add(dtoRespuestaCliente);
-        //        }
-        //        return (listaPayloadCliente.Count > 0) ? Ok(listaPayloadCliente) : NotFound("No existe data para los filtros ingresados");
-        //    }
-        //    catch (Exception exception)
-        //    {
-        //        Log.Error(exception, $"HA OCURRIDO UN ERROR AL CONSULTAR POR REFERENCIA Y FECHA");
-        //        throw;
-        //    }
-        //    finally
-        //    {
-        //        if (connection.State == ConnectionState.Open)
-        //        {
-        //            connection.Close();
-        //        }
-        //    }
-        //}
-
+        
         [HttpPost("Celmedia/Masivo")]
-        public async Task<ActionResult<List<PayloadCliente>>> ObtenerPayloadCelmedia([FromBody]MasivaDto request)
+        public async Task<ActionResult<List<PayloadCliente>>> ObtenerPayloadCelmedia([FromBody] MasivaDto request)
         {
-            if (string.IsNullOrEmpty(request.Usuario)) return BadRequest("El usuario no puede ir en vacio.");
+            if (string.IsNullOrEmpty(request.Usuario))
+            {
+                return BadRequest("El usuario no puede ir en vacio.");
+            }
+
             await using var connection = new SqlConnection(_config.GetConnectionString("conexion"));
             var nombreUsuario = string.Empty;
             var esAdmin = false;
@@ -1812,6 +764,7 @@ namespace CargaBd.API.Controllers
             nombreUsuario = resultValidacion.Item1;
             esAdmin = resultValidacion.Item2;
             DataTable tablaResult = new();
+
             if (!string.IsNullOrEmpty(request.Id))
             {
                 if (!string.IsNullOrEmpty(request.FechaDesde) || !string.IsNullOrEmpty(request.FechaHasta) || !string.IsNullOrEmpty(request.Referencia))
@@ -1847,6 +800,7 @@ namespace CargaBd.API.Controllers
                 }
             }
             var listaPayloads = new List<PayloadCliente>(tablaResult.Rows.Count);
+
             try
             {
                 foreach (DataRow row in tablaResult.Rows)
@@ -1884,7 +838,7 @@ namespace CargaBd.API.Controllers
                         dtoRespuestaCliente.QuienRecibeNombre = extraHelperClient.sep360_nombrerecibe;
                         dtoRespuestaCliente.QuienRecibeRut = extraHelperClient.sep360_rutrecibe;
                         dtoRespuestaCliente.Intentos = extraHelperClient.sep360_nintento;
-                        dtoRespuestaCliente.FechaIntentos = extraHelperClient.sep360_nintentof;
+                        //dtoRespuestaCliente.FechaIntentos = extraHelperClient.sep360_nintentof;
                     }
                     listaPayloads.Add(dtoRespuestaCliente);
                 }
@@ -1908,9 +862,13 @@ namespace CargaBd.API.Controllers
         }
 
         [HttpPost("Pickup/Masivo")]
-        public async Task<ActionResult<List<PayloadDto>>> ObtenerPayloadPickup([FromBody]MasivaDto request)
+        public async Task<ActionResult<List<PayloadRespuesta>>> ObtenerPayloadPickup([FromBody] MasivaDto request)
         {
-            if (string.IsNullOrEmpty(request.Usuario)) return BadRequest("El usuario no puede ir en vacio.");
+            if (string.IsNullOrEmpty(request.Usuario))
+            {
+                return BadRequest("El usuario no puede ir en vacio.");
+            }
+
             await using var connection = new SqlConnection(_config.GetConnectionString("conexion"));
             var nombreUsuario = string.Empty;
             var esAdmin = false;
@@ -1918,6 +876,7 @@ namespace CargaBd.API.Controllers
             nombreUsuario = resultValidacion.Item1;
             esAdmin = resultValidacion.Item2;
             DataTable tablaResult = new();
+
             if (!string.IsNullOrEmpty(request.Id))
             {
                 if (!string.IsNullOrEmpty(request.FechaDesde) || !string.IsNullOrEmpty(request.FechaHasta) || !string.IsNullOrEmpty(request.Referencia))
@@ -1926,7 +885,7 @@ namespace CargaBd.API.Controllers
                     ? FiltroConsulta.ConsultaAdminPorId(request.Id, connection)
                     : FiltroConsulta.ConsultaClientePorId(request.Id, nombreUsuario, connection);
             }
-            else if(!string.IsNullOrEmpty(request.FechaDesde) && !string.IsNullOrEmpty(request.FechaHasta))
+            else if (!string.IsNullOrEmpty(request.FechaDesde) && !string.IsNullOrEmpty(request.FechaHasta))
             {
                 if (!DateTime.TryParse(request.FechaDesde, out var TimeFixedDesde) || !DateTime.TryParse(request.FechaHasta, out var TimeFixedHasta))
                     return BadRequest("El formato de la fecha no es compatible");
@@ -1934,7 +893,7 @@ namespace CargaBd.API.Controllers
                     return BadRequest("Los rangos de fecha están cambiados. Limite 'hasta' es menor a la fecha 'desde'");
                 if (DateTime.Compare(TimeFixedDesde.AddDays(30), TimeFixedHasta) <= 0)
                     return BadRequest("Las fechas no pueden llevar por más de 30 días");
-                
+
                 if (!string.IsNullOrEmpty(request.Referencia))
                 {
                     //preguntar por referencia y fechas
@@ -1942,7 +901,7 @@ namespace CargaBd.API.Controllers
                         ? FiltroConsulta.ConsultaAdminFechasReferencia(TimeFixedDesde.ToShortDateString(),
                             TimeFixedHasta.ToShortDateString(), request.Referencia, connection)
                         : FiltroConsulta.ConsultaClienteFechasReferencia(TimeFixedDesde.ToShortDateString(),
-                            TimeFixedHasta.ToShortDateString(), request.Referencia,nombreUsuario, connection);
+                            TimeFixedHasta.ToShortDateString(), request.Referencia, nombreUsuario, connection);
                 }
                 else
                 {
@@ -1953,13 +912,13 @@ namespace CargaBd.API.Controllers
                             TimeFixedHasta.ToShortDateString(), nombreUsuario, connection);
                 }
             }
-            
-            var listaPayloads = new List<PayloadDto>(tablaResult.Rows.Count);
+
+            var listaPayloads = new List<PayloadRespuesta>(tablaResult.Rows.Count);
             try
             {
                 foreach (DataRow row in tablaResult.Rows)
                 {
-                    var dtoRespuesta = new PayloadDto();
+                    var dtoRespuesta = new PayloadRespuesta();
                     var idPayload = int.Parse(row["SECUENCIA"].ToString());
                     dtoRespuesta = CreaObjetos.CreaObjetoAdmin(row);
 
@@ -2256,5 +1215,279 @@ namespace CargaBd.API.Controllers
 
     
 
+        [HttpPost("Pickup/MasivoExportCsv")]
+        public async Task<ActionResult<List<PayloadRespuesta>>> MasivoExportCsv([FromBody] MasivaDto request)
+        {
+            if (string.IsNullOrEmpty(request.Usuario))
+            {
+                return BadRequest("El usuario no puede ir en vacio.");
+            }
+
+            await using var connection = new SqlConnection(_config.GetConnectionString("conexion"));
+            var nombreUsuario = string.Empty;
+            var esAdmin = false;
+            var resultValidacion = FiltroConsulta.ValidaTipoUsuario(connection, request.Usuario);
+            nombreUsuario = resultValidacion.Item1;
+            esAdmin = resultValidacion.Item2;
+            DataTable tablaResult = new();
+
+            if (!string.IsNullOrEmpty(request.Id))
+            {
+                if (!string.IsNullOrEmpty(request.FechaDesde) || !string.IsNullOrEmpty(request.FechaHasta) || !string.IsNullOrEmpty(request.Referencia))
+                {
+                    return BadRequest("NO PUEDES CONSULTAR POR FECHAS SI BUSCAS POR ID");
+                }
+
+                tablaResult = esAdmin
+                    ? FiltroConsulta.ConsultaAdminPorId(request.Id, connection)
+                    : FiltroConsulta.ConsultaClientePorId(request.Id, nombreUsuario, connection);
+            }
+            else if (!string.IsNullOrEmpty(request.FechaDesde) && !string.IsNullOrEmpty(request.FechaHasta))
+            {
+                if (!DateTime.TryParse(request.FechaDesde, out var TimeFixedDesde) || !DateTime.TryParse(request.FechaHasta, out var TimeFixedHasta))
+                    return BadRequest("El formato de la fecha no es compatible");
+                if (DateTime.Compare(TimeFixedHasta, TimeFixedDesde) < 0)
+                    return BadRequest("Los rangos de fecha están cambiados. Limite 'hasta' es menor a la fecha 'desde'");
+                if (DateTime.Compare(TimeFixedDesde.AddDays(30), TimeFixedHasta) <= 0)
+                    return BadRequest("Las fechas no pueden llevar por más de 30 días");
+
+                if (!string.IsNullOrEmpty(request.Referencia))
+                {
+                    //preguntar por referencia y fechas
+                    tablaResult = esAdmin
+                        ? FiltroConsulta.ConsultaAdminFechasReferencia(TimeFixedDesde.ToShortDateString(),
+                            TimeFixedHasta.ToShortDateString(), request.Referencia, connection)
+                        : FiltroConsulta.ConsultaClienteFechasReferencia(TimeFixedDesde.ToShortDateString(),
+                            TimeFixedHasta.ToShortDateString(), request.Referencia, nombreUsuario, connection);
+                }
+                else
+                {
+                    tablaResult = esAdmin
+                        ? FiltroConsulta.ConsultaAdminPorFechas(TimeFixedDesde.ToShortDateString(),
+                            TimeFixedHasta.ToShortDateString(), connection)
+                        : FiltroConsulta.ConsultaClienteEntreFechas(TimeFixedDesde.ToShortDateString(),
+                            TimeFixedHasta.ToShortDateString(), nombreUsuario, connection);
+                }
+            }
+
+            var listaPayloads = new List<PayloadRespuesta>(tablaResult.Rows.Count);
+            try
+            {
+                foreach (DataRow row in tablaResult.Rows)
+                {
+                    var dtoRespuesta = new PayloadRespuesta();
+                    var idPayload = int.Parse(row["SECUENCIA"].ToString());
+                    dtoRespuesta = CreaObjetos.CreaObjetoAdmin(row);
+
+                    #region Cargar TAGS
+
+                    var commandObtenerTags = new SqlCommand("ObtenerTagsSegunId")
+                    {
+                        CommandType = CommandType.StoredProcedure,
+                        Connection = connection,
+                        Parameters =
+                        {
+                            new SqlParameter
+                            {
+                                ParameterName = "@id",
+                                SqlDbType = SqlDbType.Int,
+                                Direction = ParameterDirection.Input,
+                                Value = idPayload
+                            }
+                        }
+                    };
+
+                    var dataAdapterTags = new SqlDataAdapter(commandObtenerTags);
+                    var tablaTags = new DataTable();
+                    dataAdapterTags.Fill(tablaTags);
+                    dtoRespuesta.tags = new string[tablaTags.Rows.Count];
+                    var iteradorTags = 0;
+                    foreach (DataRow tags in tablaTags.Rows)
+                    {
+                        dtoRespuesta.tags[iteradorTags] = tags["NAMETAG"].ToString();
+                        iteradorTags++;
+                    }
+
+                    #endregion
+
+                    #region Cargar Pictures
+
+                    var commandObtenerPictures = new SqlCommand("ObtenerPicturesSegunId")
+                    {
+                        CommandType = CommandType.StoredProcedure,
+                        Connection = connection,
+                        Parameters =
+                        {
+                            new SqlParameter
+                            {
+                                ParameterName = "@id",
+                                SqlDbType = SqlDbType.Int,
+                                Direction = ParameterDirection.Input,
+                                Value = idPayload
+                            }
+                        }
+                    };
+                    var dataAdapterPictures = new SqlDataAdapter(commandObtenerPictures);
+                    var tablaPictures = new DataTable();
+                    dataAdapterPictures.Fill(tablaPictures);
+                    dtoRespuesta.pictures = new string[tablaPictures.Rows.Count];
+                    var iteradorPictures = 0;
+                    foreach (DataRow pictures in tablaPictures.Rows)
+                    {
+                        dtoRespuesta.pictures[iteradorPictures] = pictures["URLPICTURE"].ToString();
+                        iteradorPictures++;
+                    }
+
+                    #endregion
+
+                    #region Cargar SkillsRequired
+
+                    var commandObtenerSR = new SqlCommand("ObtenerSkillsRequiredSegunId")
+                    {
+                        CommandType = CommandType.StoredProcedure,
+                        Connection = connection,
+                        Parameters =
+                        {
+                            new SqlParameter
+                            {
+                                ParameterName = "@id",
+                                SqlDbType = SqlDbType.Int,
+                                Direction = ParameterDirection.Input,
+                                Value = idPayload
+                            }
+                        }
+                    };
+                    var dataAdapterSR = new SqlDataAdapter(commandObtenerSR);
+                    var tablaSR = new DataTable();
+                    dataAdapterSR.Fill(tablaSR);
+                    dtoRespuesta.skills_required = new int[tablaSR.Rows.Count];
+                    var iteradorSR = 0;
+                    foreach (DataRow skillsRequired in tablaSR.Rows)
+                    {
+                        dtoRespuesta.skills_required[iteradorSR] = int.Parse(skillsRequired["NAMESR"].ToString());
+                        iteradorSR++;
+                    }
+
+                    #endregion
+
+                    #region Cargar SkillsOptionals
+
+                    var commandObtenerSO = new SqlCommand("ObtenerSkillsOptionalsSegunId")
+                    {
+                        CommandType = CommandType.StoredProcedure,
+                        Connection = connection,
+                        Parameters =
+                        {
+                            new SqlParameter
+                            {
+                                ParameterName = "@id",
+                                SqlDbType = SqlDbType.Int,
+                                Direction = ParameterDirection.Input,
+                                Value = idPayload
+                            }
+                        }
+                    };
+                    var dataAdapterSO = new SqlDataAdapter(commandObtenerSO);
+                    var tablaSO = new DataTable();
+                    dataAdapterSO.Fill(tablaSO);
+                    dtoRespuesta.skills_optional = new int[tablaSR.Rows.Count];
+                    var iteradorSO = 0;
+                    foreach (DataRow skillsOptional in tablaSO.Rows)
+                    {
+                        dtoRespuesta.skills_optional[iteradorSO] = int.Parse(skillsOptional["NAMESO"].ToString());
+                        iteradorSO++;
+                    }
+
+                    #endregion
+
+                    #region Cargar Utility Extra fields
+
+                    var commandObtenerEF = new SqlCommand("ObtenerExtraSegunId")
+                    {
+                        CommandType = CommandType.StoredProcedure,
+                        Connection = connection,
+                        Parameters =
+                        {
+                            new SqlParameter
+                            {
+                                ParameterName = "@id",
+                                SqlDbType = SqlDbType.Int,
+                                Direction = ParameterDirection.Input,
+                                Value = idPayload
+                            }
+                        }
+                    };
+                    var dataAdapterEF = new SqlDataAdapter(commandObtenerEF);
+                    var tablaEF = new DataTable();
+                    dataAdapterEF.Fill(tablaEF);
+                    var extraHelperClient = new ExtraFieldHelper();
+                    if (tablaEF.Rows.Count > 0)
+                    {
+                        extraHelperClient.sep360_nintento = tablaEF.Rows[0]["NINTENTO"].ToString() ?? string.Empty;
+                        extraHelperClient.sep360_nombrerecibe =
+                            tablaEF.Rows[0]["NOMBRERECIBE"].ToString() ?? string.Empty;
+                        extraHelperClient.sep360_nintentof = tablaEF.Rows[0]["INTENTOF"].ToString() ?? string.Empty;
+                        extraHelperClient.sep360_rutrecibe = tablaEF.Rows[0]["RUTRECIBE"].ToString() ?? string.Empty;
+                    }
+
+                    #endregion
+
+                    dtoRespuesta.extra_field_values = extraHelperClient;
+                    listaPayloads.Add(dtoRespuesta);
+                }
+
+                var cc = new CsvConfiguration(new System.Globalization.CultureInfo("en-US"));
+                using (var ms = new MemoryStream())
+                {
+                    using (var sw = new StreamWriter(stream: ms, encoding: new UTF8Encoding(true)))
+                    {
+                        using (var cw = new CsvWriter(sw, cc))
+                        {
+                            cw.WriteRecords(listaPayloads);
+                        }// The stream gets flushed here.
+                        return File(ms.ToArray(), "text/csv", $"export_{DateTime.UtcNow.Ticks}.csv");
+                    }
+                }
+               
+
+
+                //return (listaPayloads.Count > 0)
+                //    ? Ok(listaPayloads)
+                //    : NotFound("No existe data para los filtros ingresados");
+            }
+            catch (Exception error)
+            {
+                Log.Error(error, error.Message);
+                throw;
+            }
+            finally
+            {
+                if (connection.State == ConnectionState.Open)
+                {
+                    connection.Close();
+                }
+            }
+
+        }
+
+        [HttpPost("CourrierCliente")]
+        public async Task<ActionResult<Respuesta>> InsertaDatos(PeticionDto request){
+            if (string.IsNullOrEmpty(request.usuario))
+            {
+                return BadRequest(new Respuesta()
+                {
+                    CodigoRespuesta = 404,
+                    MensajeUsuario = "Se debe especificar un usuario",
+                    ResponseBody = "error"
+                });
+            }
+            await using var connection = new SqlConnection(_config.GetConnectionString("conexion"));
+            var nombreUsuario = string.Empty;
+            var esAdmin = false;
+            var resultValidacion = FiltroConsulta.ValidaTipoUsuario(connection, request.usuario);
+            nombreUsuario = resultValidacion.Item1;
+            request.usuario = nombreUsuario;
+            return InsertaTablas.InsertarPayloadTrack(connection,request);
+        }
     }
 }

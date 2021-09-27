@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using Microsoft.Data.SqlClient;
 using Serilog;
@@ -9,8 +10,11 @@ namespace CargaBd.API.Logica
     {
         public static DataTable ConsultaAdminFechasReferencia(string fechaDesde,string fechaHasta,string referencia, SqlConnection connection)
         {
-            var tablaResultUsuario = new DataTable();
-            var commandObtenerUsuario = new SqlCommand("ObtenerPayloadEntreFechasYRefAdmin")
+            var fechaDesdeFix = DateTime.Parse(fechaDesde).ToString("yyyy-MM-dd");
+            var fechaHastaFix = DateTime.Parse(fechaHasta).ToString("yyyy-MM-dd");
+            var tablaResultsIds = new DataTable();
+            var tablaResultados = new DataTable();
+            var commandObtenerIds = new SqlCommand("ObtenerPayloadEntreFechasYRefAdmin")
             {
                 CommandType = CommandType.StoredProcedure,
                 Connection = connection,
@@ -20,13 +24,13 @@ namespace CargaBd.API.Logica
                         ParameterName = "@fechaDesde",
                         SqlDbType = SqlDbType.NVarChar,
                         Direction = ParameterDirection.Input,
-                        Value = fechaDesde
+                        Value = fechaDesdeFix
                     },
                     new SqlParameter{
                         ParameterName = "@fechaHasta",
                         SqlDbType = SqlDbType.NVarChar,
                         Direction = ParameterDirection.Input,
-                        Value = fechaHasta
+                        Value = fechaHastaFix
                     },
                     new SqlParameter{
                         ParameterName = "@referencia",
@@ -38,15 +42,33 @@ namespace CargaBd.API.Logica
             };
             try
             {
-                commandObtenerUsuario.CommandTimeout = 120000;
-                var dataAdapterUser = new SqlDataAdapter(commandObtenerUsuario);
-                dataAdapterUser.Fill(tablaResultUsuario);
-                return tablaResultUsuario;
+                var diccionarioAgregados = new Dictionary<string, string>();
+                commandObtenerIds.CommandTimeout = 120000;
+                var dataAdapterUser = new SqlDataAdapter(commandObtenerIds);
+                dataAdapterUser.Fill(tablaResultsIds);
+                var primeraBusqueda = true;
+                foreach (DataRow row in tablaResultsIds.Rows)
+                {
+                    var idCaido = int.Parse(row["ID"].ToString());
+                    var resultBusqueda = InsertaTablas.ObtenerPayloadFiltro(connection, idCaido,ref diccionarioAgregados);
+                    if (resultBusqueda.Item1)
+                    {
+                        if (primeraBusqueda)
+                        {
+                            primeraBusqueda = false;
+                            tablaResultados = resultBusqueda.Item2;
+                        }
+                        else
+                        {
+                            tablaResultados.ImportRow(resultBusqueda.Item2.Rows[0]);
+                        }
+                    }
+                }
+                //VALIDAR QUE EXISTA UNA ROW IGUAL
+                return tablaResultados;
             }
             catch (Exception exception)
             {
-                Console.WriteLine(
-                    $"Ha ocurrido un error al ejecutar el procedure del usuario con mensaje {exception.Message}");
                 Log.Error(exception, "HA OCURRIDO UN ERROR AL RECUPERAR AL USUARIO EN BUSQUEDA MASIVA CON REFERENCIAS");
                 throw;
             }
@@ -54,8 +76,12 @@ namespace CargaBd.API.Logica
 
         public static DataTable ConsultaAdminPorFechas(string fechaDesde, string fechaHasta, SqlConnection connection)
         {
+            var fechaDesdeFix = DateTime.Parse(fechaDesde).ToString("yyyy-MM-dd");
+            var fechaHastaFix = DateTime.Parse(fechaHasta).ToString("yyyy-MM-dd");
             var tablaResultUsuario = new DataTable();
-            var commandObtenerUsuario = new SqlCommand("ObtenerPayloadEntreFechasAdmin")
+            var tablaResultados = new DataTable();
+            //var commandObtenerUsuario = new SqlCommand("ObtenerPayloadEntreFechasAdmin")
+            var commandObtenerUsuario = new SqlCommand("ObtenerIDsEntreFechasAdmin")
             {
                 CommandType = CommandType.StoredProcedure,
                 Connection = connection,
@@ -65,22 +91,45 @@ namespace CargaBd.API.Logica
                         ParameterName = "@fechaDesde",
                         SqlDbType = SqlDbType.NVarChar,
                         Direction = ParameterDirection.Input,
-                        Value = fechaDesde
+                        Value = fechaDesdeFix
                     },
                     new SqlParameter{
                         ParameterName = "@fechaHasta",
                         SqlDbType = SqlDbType.NVarChar,
                         Direction = ParameterDirection.Input,
-                        Value = fechaHasta
+                        Value = fechaHastaFix
                     }
                 }
             };
             try
             {
+                //obtener los IDs
+                //por cada ID tablaResult.Merge con el resultado de la busqueda por cada ID
+                //retornar la wea
+                var diccionarioAgregados = new Dictionary<string, string>();
                 commandObtenerUsuario.CommandTimeout = 120000;
                 var dataAdapterUser = new SqlDataAdapter(commandObtenerUsuario);
                 dataAdapterUser.Fill(tablaResultUsuario);
-                return tablaResultUsuario;
+                var primeraBusqueda = true;
+                foreach (DataRow row in tablaResultUsuario.Rows)
+                {
+                    var idCaido = int.Parse(row["ID"].ToString());
+                    var resultBusqueda = InsertaTablas.ObtenerPayloadFiltro(connection, idCaido,ref diccionarioAgregados);
+                    //tablaResultados.Merge(resultBusqueda);
+                    if (resultBusqueda.Item1)
+                    {
+                        if (primeraBusqueda)
+                        {
+                            primeraBusqueda = false;
+                            tablaResultados = resultBusqueda.Item2;
+                        }
+                        else
+                        {
+                            tablaResultados.ImportRow(resultBusqueda.Item2.Rows[0]);
+                        }
+                    }
+                }
+                return tablaResultados;
             }
             catch (Exception exception)
             {
@@ -93,6 +142,7 @@ namespace CargaBd.API.Logica
 
         public static DataTable ConsultaAdminPorId(string id, SqlConnection connection)
         {
+
             var tablaResultUsuario = new DataTable();
             var commandObtenerUsuario = new SqlCommand("ObtenerPayloadSegunTrackAdmin")
             {
@@ -126,8 +176,11 @@ namespace CargaBd.API.Logica
 
         public static DataTable ConsultaClienteFechasReferencia(string fechaDesde, string fechaHasta, string referencia,string usuario, SqlConnection connection)
         {
-            var tablaResultUsuario = new DataTable();
-            var commandObtenerUsuario = new SqlCommand("ObtenerPayloadEntreFechasYReferencia")
+            var fechaDesdeFix = DateTime.Parse(fechaDesde).ToString("yyyy-MM-dd");
+            var fechaHastaFix = DateTime.Parse(fechaHasta).ToString("yyyy-MM-dd");
+            var tablaResultIds = new DataTable();
+            var tablaResultados = new DataTable();
+            var commandObtenerIds = new SqlCommand("ObtenerPayloadEntreFechasYReferencia")
             {
                 CommandType = CommandType.StoredProcedure,
                 Connection = connection,
@@ -137,13 +190,13 @@ namespace CargaBd.API.Logica
                         ParameterName = "@fechaDesde",
                         SqlDbType = SqlDbType.NVarChar,
                         Direction = ParameterDirection.Input,
-                        Value = fechaDesde
+                        Value = fechaDesdeFix
                     },
                     new SqlParameter{
                         ParameterName = "@fechaHasta",
                         SqlDbType = SqlDbType.NVarChar,
                         Direction = ParameterDirection.Input,
-                        Value = fechaHasta
+                        Value = fechaHastaFix
                     },
                     new SqlParameter{
                         ParameterName = "@referencia",
@@ -161,16 +214,36 @@ namespace CargaBd.API.Logica
             };
             try
             {
-                commandObtenerUsuario.CommandTimeout = 120000;
-                var dataAdapterUser = new SqlDataAdapter(commandObtenerUsuario);
-                dataAdapterUser.Fill(tablaResultUsuario);
-                return tablaResultUsuario;
+                var diccionarioAgregados = new Dictionary<string, string>();
+                commandObtenerIds.CommandTimeout = 120000;
+                var dataAdapterUser = new SqlDataAdapter(commandObtenerIds);
+                dataAdapterUser.Fill(tablaResultIds);
+                var primeraBusqueda = true;
+                foreach (DataRow row in tablaResultIds.Rows)
+                {
+                    var idCaido = int.Parse(row["ID"].ToString());
+                    var resultBusqueda = InsertaTablas.ObtenerPayloadFiltro(connection, idCaido,ref diccionarioAgregados);
+                    //tablaResultados.Merge(resultBusqueda);
+                    if (resultBusqueda.Item1)
+                    {
+                        if (primeraBusqueda)
+                        {
+                            primeraBusqueda = false;
+                            tablaResultados = resultBusqueda.Item2;
+                        }
+                        else
+                        {
+                            tablaResultados.ImportRow(resultBusqueda.Item2.Rows[0]);
+                        }
+                    }
+                }
+                return tablaResultados;
             }
             catch (Exception exception)
             {
                 Console.WriteLine(
-                    $"Ha ocurrido un error al ejecutar el procedure del usuario con mensaje {exception.Message}");
-                Log.Error(exception, "HA OCURRIDO UN ERROR AL RECUPERAR AL USUARIO EN BUSQUEDA MASIVA CON REFERENCIAS");
+                    $"Ha ocurrido un error al ejecutar el procedure ObtenerPayloadEntreFechasYReferencia con mensaje {exception.Message}");
+                Log.Error(exception, "HA OCURRIDO UN ERROR AL RECUPERAR ObtenerPayloadEntreFechasYReferencia EN BUSQUEDA MASIVA CON REFERENCIAS");
                 throw;
             }
         }
@@ -216,8 +289,11 @@ namespace CargaBd.API.Logica
 
         public static DataTable ConsultaClienteEntreFechas(string fechaDesde, string fechaHasta,string usuario, SqlConnection connection)
         {
-            var tablaResultUsuario = new DataTable();
-            var commandObtenerUsuario = new SqlCommand("ObtenerPayloadEntreFechas")
+            var fechaDesdeFix = DateTime.Parse(fechaDesde).ToString("yyyy-MM-dd");
+            var fechaHastaFix = DateTime.Parse(fechaHasta).ToString("yyyy-MM-dd");
+            var tablaResultsIds = new DataTable();
+            var tablaResultados = new DataTable();
+            var commandObtenerIds = new SqlCommand("ObtenerPayloadEntreFechas")
             {
                 CommandType = CommandType.StoredProcedure,
                 Connection = connection,
@@ -227,13 +303,13 @@ namespace CargaBd.API.Logica
                         ParameterName = "@fechaDesde",
                         SqlDbType = SqlDbType.NVarChar,
                         Direction = ParameterDirection.Input,
-                        Value = fechaDesde
+                        Value = fechaDesdeFix
                     },
                     new SqlParameter{
                         ParameterName = "@fechaHasta",
                         SqlDbType = SqlDbType.NVarChar,
                         Direction = ParameterDirection.Input,
-                        Value = fechaHasta
+                        Value = fechaHastaFix
                     },
                     new SqlParameter{
                         ParameterName = "@usuario",
@@ -245,10 +321,28 @@ namespace CargaBd.API.Logica
             };
             try
             {
-                commandObtenerUsuario.CommandTimeout = 120000;
-                var dataAdapterUser = new SqlDataAdapter(commandObtenerUsuario);
-                dataAdapterUser.Fill(tablaResultUsuario);
-                return tablaResultUsuario;
+                var diccionarioAgregados = new Dictionary<string, string>();
+                commandObtenerIds.CommandTimeout = 120000;
+                var dataAdapterUser = new SqlDataAdapter(commandObtenerIds);
+                dataAdapterUser.Fill(tablaResultsIds);
+                var primeraBusqueda = true;
+                foreach (DataRow row in tablaResultsIds.Rows)
+                {
+                    var idCaido = int.Parse(row["ID"].ToString());
+                    var resultBusqueda = InsertaTablas.ObtenerPayloadFiltro(connection, idCaido,ref diccionarioAgregados);
+                    //tablaResultados.Merge(resultBusqueda);
+                    if (!resultBusqueda.Item1) continue;
+                    if (primeraBusqueda)
+                    {
+                        primeraBusqueda = false;
+                        tablaResultados = resultBusqueda.Item2;
+                    }
+                    else
+                    {
+                        tablaResultados.ImportRow(resultBusqueda.Item2.Rows[0]);
+                    }
+                }
+                return tablaResultados;
             }
             catch (Exception exception)
             {

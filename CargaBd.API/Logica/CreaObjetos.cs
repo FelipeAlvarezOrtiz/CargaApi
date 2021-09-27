@@ -7,63 +7,12 @@ namespace CargaBd.API.Logica
 {
     public static class CreaObjetos
     {
-        public static PayloadDto CreaObjetoAdmin(DataRow row)
+        public static PayloadRespuesta CreaObjetoAdmin(DataRow row)
         {
             var id = int.Parse(row["ID"].ToString() ?? string.Empty);
             try
             {
-                if (id == 70711018)
-                {
-                    Console.WriteLine("Error");
-                }
-                //var order = int.Parse(row["ORDER"].ToString() ?? string.Empty);
-                var tracking_id = row["TRACKING_ID"].ToString();
-                var status = row["STATUS"].ToString();
-                var title = row["TITLE"].ToString();
-                var address = row["ADDRESS"].ToString();
-                var checkin_time = row["CHECKIN_TIME"].ToString();
-                var checkout_comment = row["CHECKOUT_COMMENT"].ToString();
-                var checkout_latitude = row["CHECKOUT_LATITUDE"].ToString();
-                var checkout_longitude = row["CHECKOUT_LONGITUDE"].ToString();
-                var checkout_observation = row["CHECKOUT_OBSERVATION"].ToString();
-                var checkout_time = row["CHECKOUT_TIME"].ToString();
-                var contact_email = row["CONTACT_EMAIL"].ToString();
-                var contact_name = row["CONTACT_NAME"].ToString();
-                var contact_phone = row["CONTACT_PHONE"].ToString();
-                var created = row["CREATED"].ToString();
-                var current_eta = row["CURRENT_ETA"].ToString();
-                var duration = row["DURATION"].ToString();
-                var estimated_time_arrival = row["ESTIMATED_TIME_ARRIVAL"].ToString();
-                var estimated_time_departure = row["ESTIMATED_TIME_DEPARTURE"].ToString();
-                var eta_current = row["ETA_CURRENT"].ToString();
-                var eta_predicted = row["ETA_PREDICTED"].ToString();
-                var extra_field_values = row["EXTRA_FIELD_VALUES"].ToString();
-                var fleet = row["FLEET"].ToString();
-                var geocode_alert = row["GEOCODE_ALERT"].ToString();
-                var has_alert = row["HAS_ALERT"].ToString().Equals("True");
-                var latitude = row["LATITUDE"].ToString();
-                var longitude = row["LONGITUDE"].ToString();
-                var modified = row["MODIFIED"].ToString();
-                var notes = row["NOTES"].ToString();
-                var planned_date = row["PLANNED_DATE"].ToString();
-                var priority = row["PRIORITY"].ToString().Equals("True");
-                var programmed_date = row["PROGRAMMED_DATE"].ToString();
-                var window_start_2 = row["WINDOW_START_2"].ToString();
-                var window_end = row["WINDOW_END"].ToString();
-                var window_start = row["WINDOW_START"].ToString();
-                var window_end_2 = row["WINDOW_END_2"].ToString();
-                var visit_type = row["VISIT_TYPE"].ToString();
-                var signature = row["SIGNATURE"].ToString();
-                var route_estimated_time_start = row["ROUTE_ESTIMATED_TIME_START"].ToString();
-                var route = row["ROUTE"].ToString();
-                var reference = row["REFERENCE"].ToString();
-                //var vehicle = int.Parse(row["VEHICLE"].ToString());
-                //var driver = int.Parse(row["DRIVER"].ToString() ?? string.Empty);
-                //var priority_level = int.Parse(row["PRIORITY_LEVEL"].ToString() ?? string.Empty);
-                var load = decimal.Parse(row["LOAD"].ToString());
-                var load_2 = decimal.Parse(row["LOAD_2"].ToString());
-                var load_3 = decimal.Parse(row["LOAD_3"].ToString());
-                return new PayloadDto
+                return new PayloadRespuesta
                 {
                     id = int.Parse(row["ID"].ToString() ?? string.Empty),
                     order = int.TryParse(row["ORDER"].ToString(), out var orderParsed) ? orderParsed : null,
@@ -105,13 +54,16 @@ namespace CargaBd.API.Logica
                     signature = row["SIGNATURE"].ToString(),
                     route_estimated_time_start = row["ROUTE_ESTIMATED_TIME_START"].ToString(),
                     route = row["ROUTE"].ToString(),
-                    reference = row["REFERENCE"].ToString(),
+                    reference = row["REFERENCE"].ToString().Replace("( prioridad )",string.Empty).Replace("(prioridad)",string.Empty),
                     vehicle = int.Parse(row["VEHICLE"].ToString()),
                     driver = int.TryParse(row["ORDER"].ToString(), out var driverParsed) ? driverParsed : null,
                     priority_level = int.TryParse(row["ORDER"].ToString(), out var plParsed) ? plParsed : null,
                     load = decimal.Parse(row["LOAD"].ToString()),
                     load_2 = decimal.Parse(row["LOAD_2"].ToString()),
                     load_3 = decimal.Parse(row["LOAD_3"].ToString()),
+                    PesoPaquete = row["PESO_PAQUETE"].ToString(),
+                    Precio = row["PRECIO"].ToString(),
+                    TipoCobro = row["TIPO_COBRO"].ToString()
                 };
             }
             catch (Exception exception)
@@ -125,12 +77,12 @@ namespace CargaBd.API.Logica
         {
             try
             {
-                var folio = row["REFERENCE"].ToString();
+                var folio = row["REFERENCE"].ToString().Replace("( prioridad )", string.Empty).Replace("(prioridad)", string.Empty);
                 var origen = "Santiago";
                 var destino = row["ADDRESS"].ToString();
-                var fechaRecepcion = row["CHECKOUT_TIME"].ToString();
+                var fechaRecepcion = row["PLANNED_DATE"].ToString() + " " + row["estimated_time_departure"].ToString();
                 var estadoEnvio = row["STATUS"].ToString();
-                var fechaEnvio = row["PLANNED_DATE"].ToString();
+                var fechaEnvio = row["CHECKIN_TIME"].ToString();
                 var fechaEntrega = row["CHECKOUT_TIME"].ToString();
                 var observacion = row["CHECKOUT_COMMENT"].ToString();
                 var seguimiento = row["ID"].ToString();
@@ -152,8 +104,9 @@ namespace CargaBd.API.Logica
                 //        break;
                 //}
                 var intentos = string.Empty;
-                var fechaIntentos = string.Empty;
-                var etaIntentos = string.Empty;
+                //var fechaIntentos = string.Empty;
+                var fechaIntentos = row["CHECKOUT_TIME"].ToString();
+                var etaIntentos = row["STATUS"].ToString();
                 //var arrayNotes = row["NOTES"].ToString()?.Split("/");
                 //switch (arrayNotes.Length)
                 //{
@@ -174,6 +127,9 @@ namespace CargaBd.API.Logica
                 //        etaIntentos = arrayNotes[3];
                 //        break;
                 //}
+                var pesoPaquete = row["PESO_PAQUETE"].ToString();
+                var precio = row["PRECIO"].ToString();
+                var tipoCobro = row["TIPO_COBRO"].ToString();
                 return new PayloadCliente()
                 {
                     Folio = folio,
@@ -189,7 +145,10 @@ namespace CargaBd.API.Logica
                     QuienRecibeRut = quienRecibeRut,
                     Intentos = intentos,
                     FechaIntentos = fechaIntentos,
-                    EtaIntentos = etaIntentos
+                    EstadoIntentos = etaIntentos,
+                    PesoPaquete = pesoPaquete,
+                    Precio = precio,
+                    TipoCobro = tipoCobro
                 };
             }
             catch (Exception exception)
