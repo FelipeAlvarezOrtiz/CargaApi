@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Drawing;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -20,6 +21,7 @@ using iTextSharp.text;
 using iTextSharp.text.pdf;
 using System.Net.Mail;
 using System.Net;
+using Rectangle = iTextSharp.text.Rectangle;
 
 namespace CargaBd.API.Controllers
 {
