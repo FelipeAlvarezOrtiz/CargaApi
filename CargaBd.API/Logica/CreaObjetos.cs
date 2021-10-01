@@ -75,6 +75,7 @@ namespace CargaBd.API.Logica
 
         public static PayloadCliente CrearObjetoCliente(DataRow row)
         {
+
             try
             {
                 var folio = row["REFERENCE"].ToString().Replace("( prioridad )", string.Empty).Replace("(prioridad)", string.Empty);
@@ -83,50 +84,18 @@ namespace CargaBd.API.Logica
                 var fechaRecepcion = row["PLANNED_DATE"].ToString() + " " + row["estimated_time_departure"].ToString();
                 var estadoEnvio = row["STATUS"].ToString();
                 var fechaEnvio = row["CHECKIN_TIME"].ToString();
-                var fechaEntrega = row["CHECKOUT_TIME"].ToString();
+                //var fechaEntrega = row["CHECKOUT_TIME"].ToString();
+                var fechaEntrega = DateTime.TryParse(row["CHECKOUT_TIME"].ToString(),out var entregaParse) ? entregaParse.ToString("yyyy-MM-dd HH:mm:ss") : string.Empty;
                 var observacion = row["CHECKOUT_COMMENT"].ToString();
                 var seguimiento = row["ID"].ToString();
                 var arrayComment = row["CHECKOUT_COMMENT"].ToString()?.Split("/");
                 var quienRecibeNombre = string.Empty;
                 var quienRecibeRut = string.Empty;
-                //switch (arrayComment.Length)
-                //{
-                //    case 0:
-                //        break;
-                //    case 1:
-                //        break;
-                //    case 2:
-                //        quienRecibeNombre = arrayComment[1];
-                //        break;
-                //    case 3:
-                //        quienRecibeNombre = arrayComment[1];
-                //        quienRecibeRut = arrayComment[2];
-                //        break;
-                //}
                 var intentos = string.Empty;
                 //var fechaIntentos = string.Empty;
-                var fechaIntentos = row["CHECKOUT_TIME"].ToString();
+                //var fechaIntentos = row["CHECKOUT_TIME"].ToString();
+                var fechaIntentos = DateTime.TryParse(row["CHECKOUT_TIME"].ToString(), out var fechaIntentosParse) ? fechaIntentosParse.ToString("yyyy-MM-dd HH:mm:ss") : string.Empty;
                 var etaIntentos = row["STATUS"].ToString();
-                //var arrayNotes = row["NOTES"].ToString()?.Split("/");
-                //switch (arrayNotes.Length)
-                //{
-                //    case 0:
-                //        break;
-                //    case 1:
-                //        break;
-                //    case 2:
-                //        intentos = arrayNotes[1];
-                //        break;
-                //    case 3:
-                //        intentos = arrayNotes[1];
-                //        fechaIntentos = arrayNotes[2];
-                //        break;
-                //    case 4:
-                //        intentos = arrayNotes[1];
-                //        fechaIntentos = arrayNotes[2];
-                //        etaIntentos = arrayNotes[3];
-                //        break;
-                //}
                 var pesoPaquete = row["PESO_PAQUETE"].ToString();
                 var precio = row["PRECIO"].ToString();
                 var tipoCobro = row["TIPO_COBRO"].ToString();
