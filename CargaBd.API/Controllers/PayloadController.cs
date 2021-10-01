@@ -1134,7 +1134,7 @@ namespace CargaBd.API.Controllers
                 PdfPTable tblPrueba = new PdfPTable(2);
                 tblPrueba.WidthPercentage = 50;
 
-                iTextSharp.text.Image tif = iTextSharp.text.Image.GetInstance("\\images\\logopdf.JPG");
+                iTextSharp.text.Image tif = iTextSharp.text.Image.GetInstance(_config.GetValue<string>("Ruta_imagen"));
                 tif.ScalePercent(24f);
 
                 document.Add(tif);
