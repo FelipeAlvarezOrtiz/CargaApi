@@ -83,7 +83,8 @@ namespace CargaBd.API.Logica
                 var destino = row["ADDRESS"].ToString();
                 var fechaRecepcion = row["PLANNED_DATE"].ToString() + " " + row["estimated_time_departure"].ToString();
                 var estadoEnvio = row["STATUS"].ToString();
-                var fechaEnvio = row["CHECKIN_TIME"].ToString();
+                //var fechaEnvio = row["CHECKIN_TIME"].ToString();
+                var fechaEnvio = DateTime.TryParse(row["CHECKIN_TIME"].ToString(), out var fechaEnvioParse) ? fechaEnvioParse.ToString("yyyy-MM-dd HH:mm:ss") : string.Empty; ;
                 //var fechaEntrega = row["CHECKOUT_TIME"].ToString();
                 var fechaEntrega = DateTime.TryParse(row["CHECKOUT_TIME"].ToString(),out var entregaParse) ? entregaParse.ToString("yyyy-MM-dd HH:mm:ss") : string.Empty;
                 var observacion = row["CHECKOUT_COMMENT"].ToString();
