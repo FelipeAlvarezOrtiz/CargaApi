@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
+using System.Globalization;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -50,8 +51,8 @@ namespace CargaBd.API.Controllers
             {
                 return BadRequest("El usuario no tiene los permisos necesarios para realizar la carga.");
             }
-
-            if (!DateTime.TryParse(Fecha.FechaFin, out var TimeFixed))
+            var culture = CultureInfo.CreateSpecificCulture("es-ES");
+            if (!DateTime.TryParse(Fecha.FechaFin, culture, DateTimeStyles.None, out var TimeFixed))
             {
                 return BadRequest("El formato de la fecha no es compatible, se espera formato dd-MM-yyyy");
             }
