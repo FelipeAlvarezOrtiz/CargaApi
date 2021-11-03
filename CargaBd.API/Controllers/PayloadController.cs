@@ -767,7 +767,6 @@ namespace CargaBd.API.Controllers
             nombreUsuario = resultValidacion.Item1;
             esAdmin = resultValidacion.Item2;
             DataTable tablaResult = new();
-
             if (!string.IsNullOrEmpty(request.Id))
             {
                 if (!string.IsNullOrEmpty(request.FechaDesde) || !string.IsNullOrEmpty(request.FechaHasta) || !string.IsNullOrEmpty(request.Referencia))
@@ -778,7 +777,8 @@ namespace CargaBd.API.Controllers
             }
             else if (!string.IsNullOrEmpty(request.FechaDesde) && !string.IsNullOrEmpty(request.FechaHasta))
             {
-                if (!DateTime.TryParse(request.FechaDesde, out var TimeFixedDesde) || !DateTime.TryParse(request.FechaHasta, out var TimeFixedHasta))
+                var culture = CultureInfo.CreateSpecificCulture("es-ES");
+                if (!DateTime.TryParse(request.FechaDesde, culture, DateTimeStyles.None, out var TimeFixedDesde) || !DateTime.TryParse(request.FechaHasta, culture, DateTimeStyles.None, out var TimeFixedHasta))
                     return BadRequest("El formato de la fecha no es compatible");
                 if (DateTime.Compare(TimeFixedHasta, TimeFixedDesde) < 0)
                     return BadRequest("Los rangos de fecha están cambiados. Limite 'hasta' es menor a la fecha 'desde'");
@@ -882,6 +882,7 @@ namespace CargaBd.API.Controllers
 
             if (!string.IsNullOrEmpty(request.Id))
             {
+
                 if (!string.IsNullOrEmpty(request.FechaDesde) || !string.IsNullOrEmpty(request.FechaHasta) || !string.IsNullOrEmpty(request.Referencia))
                     return BadRequest("NO PUEDES CONSULTAR POR FECHAS SI BUSCAS POR ID");
                 tablaResult = esAdmin
@@ -890,7 +891,8 @@ namespace CargaBd.API.Controllers
             }
             else if (!string.IsNullOrEmpty(request.FechaDesde) && !string.IsNullOrEmpty(request.FechaHasta))
             {
-                if (!DateTime.TryParse(request.FechaDesde, out var TimeFixedDesde) || !DateTime.TryParse(request.FechaHasta, out var TimeFixedHasta))
+                var culture = CultureInfo.CreateSpecificCulture("es-ES");
+                if (!DateTime.TryParse(request.FechaDesde, culture, DateTimeStyles.None, out var TimeFixedDesde) || !DateTime.TryParse(request.FechaHasta, culture, DateTimeStyles.None, out var TimeFixedHasta))
                     return BadRequest("El formato de la fecha no es compatible");
                 if (DateTime.Compare(TimeFixedHasta, TimeFixedDesde) < 0)
                     return BadRequest("Los rangos de fecha están cambiados. Limite 'hasta' es menor a la fecha 'desde'");
@@ -1100,6 +1102,7 @@ namespace CargaBd.API.Controllers
             }
 
         }
+        
         [HttpPost("Pickup/Etiqueta")]
         public async Task<IActionResult> CargarEtiqueta([FromBody] Etiqueta_array request)
         {
@@ -1215,9 +1218,7 @@ namespace CargaBd.API.Controllers
 
         }
 
-
-    
-
+        
         [HttpPost("Pickup/MasivoExportCsv")]
         public async Task<ActionResult<List<PayloadRespuesta>>> MasivoExportCsv([FromBody] MasivaDto request)
         {
@@ -1247,7 +1248,9 @@ namespace CargaBd.API.Controllers
             }
             else if (!string.IsNullOrEmpty(request.FechaDesde) && !string.IsNullOrEmpty(request.FechaHasta))
             {
-                if (!DateTime.TryParse(request.FechaDesde, out var TimeFixedDesde) || !DateTime.TryParse(request.FechaHasta, out var TimeFixedHasta))
+                var culture = CultureInfo.CreateSpecificCulture("es-ES");
+                //culture, DateTimeStyles.None,
+                if (!DateTime.TryParse(request.FechaDesde, culture, DateTimeStyles.None, out var TimeFixedDesde) || !DateTime.TryParse(request.FechaHasta, culture, DateTimeStyles.None, out var TimeFixedHasta))
                     return BadRequest("El formato de la fecha no es compatible");
                 if (DateTime.Compare(TimeFixedHasta, TimeFixedDesde) < 0)
                     return BadRequest("Los rangos de fecha están cambiados. Limite 'hasta' es menor a la fecha 'desde'");
